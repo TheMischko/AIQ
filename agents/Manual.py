@@ -25,7 +25,7 @@ class Manual(Agent):
             sys.exit()
 
         self.mode = MANUAL
-        self.last_val = 0
+        self.last_value = 0
             
 
     def __str__( self ):
@@ -41,7 +41,7 @@ class Manual(Agent):
         print(" obs = " + str(obs) + " reward = " + str(reward))
 
         if self.mode == MANUAL:
-            choice = raw_input(" action [0-" + str(self.num_actions-1) + "]  ")[0]
+            choice = input(" action [0-" + str(self.num_actions-1) + "]  ")[0]
             if choice == "r":
                 self.mode = RANDOM
             elif choice == "s":

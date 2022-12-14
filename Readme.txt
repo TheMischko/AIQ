@@ -96,6 +96,16 @@ Arguments:
 --verbose_log_el  Swith on logging intermediate results every 1000
   interactions, needs log-el directory.
 
+--multi_round_el=method,param1,param2,...  Swith on multi-round EL
+  convergence optimalization using selected method and parameters:
+	(this technique increases the consumption of RAM considerably)
+    Delta,Difference,EL_to_evaluate  absolute difference of AIQ
+		  is less then Difference, computed every EL_to_evaluate nr.
+			of iterations.
+    delta,difference,EL_to_evaluate  relative difference of AIQ
+		  is less then difference in percent, computed every
+			 EL_to_evaluate nr. of iterations.
+
 --simple_mc Use a simple MC sample rather than the stratified sampler.
   Useful for sanity checks and also debugging as it doesn't do any
   async stuff etc.
@@ -181,9 +191,11 @@ generate. The file consists of just rows of samples so you can
 concatenate the output of different runs to make a combined sample
 file. The -l option specifies minimal length of generated programs
 (by default, shorter programs are dropped during the sampling process,
-to extend the shorter programs add option --extend_shorter.) The
- --theoretical_sampler option disables all BF code optimization and
-also outputs programs that are passive or overtime.
+to extend the shorter programs add option --extend_shorter.)
+The  --theoretical_sampler option disables all BF code optimization
+and also outputs programs that are passive or overtime.
+The --improved_optimization option enables optimization of sampled
+programs by removing further pointless code.
 
 
 /refmachine/sample 

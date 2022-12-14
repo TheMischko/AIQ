@@ -8,8 +8,8 @@
 # Released under GNU GPLv3
 #
 
-from scipy import zeros
-from scipy import exp
+from numpy import zeros
+from numpy import exp
 from random import randrange
 from random import random
 

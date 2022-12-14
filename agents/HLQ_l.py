@@ -103,6 +103,7 @@ class HLQ_l(Agent):
 
         for s in range(self.num_states):
             for a in range(self.num_actions):
+                # @ToDo - Decide if one should keep division that returns of approximation of float or return floored division as it was in python 2
                 B[s,a] = E[s,a] / (V[nstate,naction] - gamma*E[nstate,naction]) \
                          * (Lambda*V[nstate,naction]+(nstate==s and naction==a)) \
                          / (Lambda*V[s,a]           +(nstate==s and naction==a))
