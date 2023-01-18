@@ -1,4 +1,5 @@
 .idea
+.run
 __pycache__
 agents/__pycache__
 refmachines/__pycache__
