@@ -116,3 +116,8 @@ class Agent:
 
         return i
 
+    def episode_ended(self):
+        return
+
+    def __str__(self):
+        return "DeelQL()"

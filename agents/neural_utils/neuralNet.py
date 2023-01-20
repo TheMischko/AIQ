@@ -4,10 +4,10 @@ from torch import nn
 class NeuralNet(nn.Module):
     def __init__(self, input_size, output_size):
         super().__init__()
-        self.l1 = nn.Linear(input_size, 128)
-        self.l2 = nn.Linear(128, 512)
-        self.l3 = nn.Linear(512, 128)
-        self.l4 = nn.Linear(128, output_size)
+        self.l1 = nn.Linear(input_size, 32)
+        self.l2 = nn.Linear(32, 64)
+        self.l3 = nn.Linear(64, 64)
+        self.l4 = nn.Linear(64, output_size)
         nn.init.zeros_(self.l1.weight)
         nn.init.zeros_(self.l2.weight)
         nn.init.zeros_(self.l3.weight)
@@ -21,7 +21,8 @@ class NeuralNet(nn.Module):
 
 
 def get_optimizer(model, learning_rate=0.001):
-    return torch.optim.AdamW(model.parameters(), learning_rate, amsgrad=True)
+    return torch.optim.RMSprop(model.parameters(), lr=learning_rate)
+    #return torch.optim.AdamW(model.parameters(), learning_rate, amsgrad=True)
 
 
 def get_criterion():

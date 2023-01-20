@@ -11,18 +11,23 @@ from random import randint
 import numpy as np
 import torch
 
+import binascii
+import os
+
 from .Agent import Agent
 from agents.neural_utils.neuralNet import NeuralNet
 from agents.neural_utils.neuralNet import get_optimizer
 from agents.neural_utils.neuralNet import get_criterion
 from agents.neural_utils.replayMemory import ReplayMemory, Transition
+from agents.neural_utils.plottingTools import PlottingTools
 
 
 class DeepQL(Agent):
-    UPDATE_INTERVAL_LENGTH = 100
-    EPSILON_LINEAR_DECAY = 0.0001
-    MIN_EPSILON = 0.2
-    LOG_LOSS = False
+    UPDATE_INTERVAL_LENGTH = 16
+    EPSILON_LINEAR_DECAY = 0.0004
+    MIN_EPSILON = 0.1
+    REWARD_DIVIDER = 100
+
     def __init__(self, refm, disc_rate, learning_rate, starting_epsilon, batch_size):
         Agent.__init__(self, refm, disc_rate)
         self.ref_machine = refm
@@ -37,47 +42,45 @@ class DeepQL(Agent):
         self.batch_size = math.floor(batch_size)
         self.criterion = get_criterion()
 
+        self.cached_state_raw = None
         self.prev_state = None
         self.prev_action = None
         self.TERMINAL_TOKEN = "TERMINAL"
         self.steps_done = 0
 
+        # Plotting data
+        self.last_losses = list()
+        self.q_values_arr = list()
+        self.id = binascii.b2a_hex(os.urandom(8))
+        self.last_network_output = None
 
-
-    def __str__(self):
-        return "DeelQL()"
+        self.plotting_tools = PlottingTools()
 
     def reset(self):
         # Replay buffer
         self.memory = ReplayMemory(10000)
         # Learning network
-        self.policy_net = NeuralNet(self.state_vec_size, self.num_actions)
-        self.previous_net = NeuralNet(self.state_vec_size, self.num_actions)
+        self.policy_net = NeuralNet(self.state_vec_size*2, self.num_actions)
         self.optimizer = get_optimizer(self.policy_net, learning_rate=self.learning_rate)
         self.steps_done = 0
         self.epsilon = self.starting_epsilon
-
+        self.q_values_arr.clear()
+        self.last_losses.clear()
 
     def perceive(self, observations, reward):
         new_state_tensor = self.transferObservationToStateVec(observations)
         new_state_unsqueezed = new_state_tensor.unsqueeze(0)
-
         # Add to replay memory
         if(self.prev_state is not None) and (self.prev_action is not None):
             self.memory.push(
                 self.prev_state,
                 self.prev_action,
                 new_state_unsqueezed,
-                torch.tensor(reward, dtype=torch.float32).unsqueeze(0)
+                torch.tensor(reward/self.REWARD_DIVIDER, dtype=torch.float32).unsqueeze(0)
             )
 
         # Do learning logic
         self.learn_from_experience()
-        if self.steps_done % self.UPDATE_INTERVAL_LENGTH == 0:
-            prev_net_weigths = self.previous_net.state_dict()
-            policy_net_weights = self.previous_net.state_dict()
-            for key in policy_net_weights:
-                prev_net_weigths[key] = policy_net_weights[key]
 
         # Update epsilon
         if self.epsilon > self.MIN_EPSILON:
@@ -88,27 +91,27 @@ class DeepQL(Agent):
 
         # Cache current state and selected action
         self.prev_action = torch.tensor(opt_action).unsqueeze(0).unsqueeze(0)
+        self.cached_state_raw = observations
         self.prev_state = new_state_unsqueezed
         self.steps_done += 1
         return opt_action
 
-    def getQValue(self, state, action):
-        values = self.previous_net.forward(state)
-        return values[action].item()
+    def episode_ended(self):
+        losses = np.array(self.last_losses)
+        self.plotting_tools.add_values_to_average_arr(losses)
+        self.plotting_tools.plot_array(np.array(self.q_values_arr), "Q values")
 
-    def transferObservationToStateVec(self, observations):
-        if len(observations) != self.obs_cells:
-            raise Exception("Observation is not in count as observation cells.")
-        state_vec = torch.zeros(self.obs_cells*self.obs_symbols, dtype=torch.float32)
-        for i in range(len(observations)):
-            state_vec[observations[i]+i*self.obs_symbols] = 1
-        return state_vec
-
+    #
+    # DeelQL specific functions
+    #
 
     def computeActionFromQValue(self, state):
-        action_values = [self.getQValue(state, action) for action in range(self.num_actions)]
-        policy = np.argmax(action_values)
-        return policy
+        with torch.no_grad():
+            action_values = self.policy_net.forward(state).tolist()
+            best_q_value = np.max(action_values)
+            self.q_values_arr.append(best_q_value)
+            policy = np.argmax(action_values)
+            return policy
 
     def getAction(self, state):
         """
@@ -130,17 +133,10 @@ class DeepQL(Agent):
         # This converts batch-array of Transitions to Transition of batch-arrays
         batch = Transition(*zip(*transitions))
 
-        # TO-DO Compute non-states and concatenate the batch elements
-        non_final_mask = torch.tensor(
-            tuple(map(lambda s: s is not self.TERMINAL_TOKEN, batch.next_state)),
-            dtype=torch.bool)
-        non_final_next_states = torch.cat(
-            [state for state in batch.next_state if state is not self.TERMINAL_TOKEN]
-        )
-
         state_batch = torch.cat(batch.state)
         action_batch = torch.cat(batch.action)
         reward_batch = torch.cat(batch.reward)
+        next_states = torch.cat(batch.next_state)
 
         # Compute Q value
         # The model computes Q(s_t), then we select the columns of actions taken.
@@ -152,19 +148,43 @@ class DeepQL(Agent):
         # Selecting their best reward with max(1)[0].
         # This is merged based on the mask, such that we'll have either the expected state value or 0 in case of
         # terminal state.
-        next_state_values = reward_batch
+        next_state_values = None
         with torch.no_grad():
-            next_state_values[non_final_mask] = next_state_values[non_final_mask] + self.disc_rate * \
-                                                self.previous_net(non_final_next_states).max(1)[0]
+            next_state_values = reward_batch + self.disc_rate * self.policy_net(next_states).max(1)[0]
 
         # Compute loss
-        loss = self.criterion(state_action_values, next_state_values.unsqueeze(1))
-        if self.LOG_LOSS:
-
-            print("loss", loss)
+        criterion = self.criterion
+        loss = criterion(state_action_values, next_state_values.unsqueeze(1))
 
         # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
+        self.optimizer.step()
 
+        # Store loss
+        self.last_losses.append(loss.item())
+
+    def transferObservationToStateVec(self, observations):
+
+        if len(observations) != self.obs_cells:
+            raise Exception("Observation is not in count as observation cells.")
+
+        state_vec = torch.zeros(self.state_vec_size*2, dtype=torch.float32)
+        if self.cached_state_raw is not None:
+            for i in range(self.obs_cells):
+                index = self.cached_state_raw[i] + i*self.obs_symbols
+                state_vec[index] = 1
+
+        for i in range(self.obs_cells):
+            index = observations[i] + (i+self.obs_cells)*self.obs_symbols
+            state_vec[index] = 1
+        return state_vec
+
+    def is_q_value_same(self, new_q_value):
+        if self.last_network_output is None:
+            return True
+        for i in range(len(self.last_network_output)):
+            if self.last_network_output[i] is not new_q_value:
+                return False
+        return True

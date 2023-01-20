@@ -24,6 +24,7 @@ import getopt, sys, os
 def test_agent( refm_call, a_call, episode_length, disc_rate, stratum, program, config ):
 
     # run twice with flipped reward second time
+
     s1, r1, ir1 = _test_agent(refm_call, a_call,  1.0, episode_length,
                          disc_rate, stratum, program, config)
     s2, r2, ir2 = _test_agent(refm_call, a_call, -1.0, episode_length,
@@ -109,7 +110,7 @@ def _test_agent( refm_call, agent_call, rflip, episode_length,
         if config["multi_rounding_el"] and not mrel_stop:
             mrel_stop, converged_reward = evaluate_mrel_stopping_condition( disc_rewards, i, config )
             config["mrel_rewards"].append( disc_reward )
-
+    agent.episode_ended()
     # normalise and possibly discount reward
     disc_reward = normalise_reward( episode_length, disc_rate, disc_reward )
 
