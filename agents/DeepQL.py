@@ -6,8 +6,6 @@
 #
 import math
 import random
-from random import randint
-
 import numpy as np
 import torch
 
@@ -23,13 +21,18 @@ from agents.neural_utils.plottingTools import PlottingTools
 
 
 class DeepQL(Agent):
-    UPDATE_INTERVAL_LENGTH = 16
+    UPDATE_INTERVAL_LENGTH = 25
     EPSILON_LINEAR_DECAY = 0.0004
     MIN_EPSILON = 0.1
     REWARD_DIVIDER = 100
+    SHOW_GRAPHS = False
 
-    def __init__(self, refm, disc_rate, learning_rate, starting_epsilon, batch_size):
+    def __init__(self, refm, disc_rate, learning_rate, starting_epsilon, batch_size, tau):
         Agent.__init__(self, refm, disc_rate)
+        self.optimizer = None
+        self.policy_net = None
+        self.target_net = None
+        self.memory = None
         self.ref_machine = refm
         self.num_states = refm.getNumObs()  # assuming that states = observations
         self.obs_symbols = refm.getNumObsSyms()
@@ -40,6 +43,7 @@ class DeepQL(Agent):
         self.starting_epsilon = starting_epsilon
         self.epsilon = starting_epsilon
         self.batch_size = math.floor(batch_size)
+        self.tau = tau
         self.criterion = get_criterion()
 
         self.cached_state_raw = None
@@ -57,10 +61,11 @@ class DeepQL(Agent):
         self.plotting_tools = PlottingTools()
 
     def reset(self):
-        # Replay buffer
         self.memory = ReplayMemory(10000)
-        # Learning network
-        self.policy_net = NeuralNet(self.state_vec_size*2, self.num_actions)
+        # Network evaluating Q function
+        self.target_net = NeuralNet(self.state_vec_size * 2, self.num_actions)
+        # Network that is learning from replay memory
+        self.policy_net = NeuralNet(self.state_vec_size * 2, self.num_actions)
         self.optimizer = get_optimizer(self.policy_net, learning_rate=self.learning_rate)
         self.steps_done = 0
         self.epsilon = self.starting_epsilon
@@ -94,12 +99,15 @@ class DeepQL(Agent):
         self.cached_state_raw = observations
         self.prev_state = new_state_unsqueezed
         self.steps_done += 1
+        if self.steps_done % self.UPDATE_INTERVAL_LENGTH == 0:
+            self.copy_target_net_to_policy()
         return opt_action
 
     def episode_ended(self):
         losses = np.array(self.last_losses)
         self.plotting_tools.add_values_to_average_arr(losses)
-        self.plotting_tools.plot_array(np.array(self.q_values_arr), "Q values")
+        if self.SHOW_GRAPHS:
+            self.plotting_tools.plot_array(np.array(self.q_values_arr), "Q values")
 
     #
     # DeelQL specific functions
@@ -107,7 +115,7 @@ class DeepQL(Agent):
 
     def computeActionFromQValue(self, state):
         with torch.no_grad():
-            action_values = self.policy_net.forward(state).tolist()
+            action_values = self.target_net.forward(state).tolist()
             best_q_value = np.max(action_values)
             self.q_values_arr.append(best_q_value)
             policy = np.argmax(action_values)
@@ -150,7 +158,7 @@ class DeepQL(Agent):
         # terminal state.
         next_state_values = None
         with torch.no_grad():
-            next_state_values = reward_batch + self.disc_rate * self.policy_net(next_states).max(1)[0]
+            next_state_values = reward_batch + self.disc_rate * self.target_net(next_states).max(1)[0]
 
         # Compute loss
         criterion = self.criterion
@@ -159,7 +167,7 @@ class DeepQL(Agent):
         # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
-        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
+        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 1)
         self.optimizer.step()
 
         # Store loss
@@ -188,3 +196,11 @@ class DeepQL(Agent):
             if self.last_network_output[i] is not new_q_value:
                 return False
         return True
+
+    def copy_target_net_to_policy(self):
+        target_net_state_dict = self.policy_net.state_dict()
+        policy_net_state_dict = self.target_net.state_dict()
+        for key in target_net_state_dict:
+            policy_net_state_dict[key] = target_net_state_dict[key] * self.tau \
+                                         + policy_net_state_dict[key] * (1-self.tau)
+            self.target_net.load_state_dict(policy_net_state_dict)
