@@ -22,8 +22,8 @@ from agents.neural_utils.plottingTools import PlottingTools
 
 class DeepQL(Agent):
     UPDATE_INTERVAL_LENGTH = 25
-    EPSILON_LINEAR_DECAY = 0.0004
-    MIN_EPSILON = 0.1
+    EPISODES_TILL_MIN_DECAY = 1000
+    MIN_EPSILON = 0
     REWARD_DIVIDER = 100
     SHOW_GRAPHS = False
 
@@ -59,6 +59,7 @@ class DeepQL(Agent):
         self.last_network_output = None
 
         self.plotting_tools = PlottingTools()
+        self.epsilon_linear_decay = (starting_epsilon-self.MIN_EPSILON)/self.EPISODES_TILL_MIN_DECAY
 
     def reset(self):
         self.memory = ReplayMemory(10000)
@@ -89,7 +90,7 @@ class DeepQL(Agent):
 
         # Update epsilon
         if self.epsilon > self.MIN_EPSILON:
-            self.epsilon -= self.EPSILON_LINEAR_DECAY
+            self.epsilon -= self.epsilon_linear_decay
 
         # Get action
         opt_action = self.getAction(new_state_tensor)
@@ -105,9 +106,9 @@ class DeepQL(Agent):
 
     def episode_ended(self):
         losses = np.array(self.last_losses)
-        self.plotting_tools.add_values_to_average_arr(losses)
         if self.SHOW_GRAPHS:
             self.plotting_tools.plot_array(np.array(self.q_values_arr), "Q values")
+            self.plotting_tools.add_values_to_average_arr(losses)
 
     #
     # DeelQL specific functions
