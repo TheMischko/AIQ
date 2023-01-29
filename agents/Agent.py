@@ -120,4 +120,4 @@ class Agent:
         return
 
     def __str__(self):
-        return "DeelQL()"
+        return "Agent()"

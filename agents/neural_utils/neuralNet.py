@@ -20,10 +20,10 @@ class NeuralNet(nn.Module):
         return self.l4(x)
 
 
-def get_optimizer(model, learning_rate=0.001):
+def get_optimizer(model, learning_rate=0.0025):
     return torch.optim.Adam(
         model.parameters(),
-        lr=0.0025,
+        lr=learning_rate,
         betas=(0.9, 0.999),
         eps=1e-08,
         weight_decay=0.01,

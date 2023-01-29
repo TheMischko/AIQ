@@ -1,59 +1,10 @@
-#
-# Trivial agent that takes random actions
-#
-# Copyright Shane Legg 2011
-# Released under GNU GPLv3
-#
-import math
-import random
 import numpy as np
 import torch
 
-import binascii
-import os
-
-from .Agent import Agent
 from agents.neural_utils.IDeepQLAgent import IDeepQLAgent
-from agents.neural_utils.neuralNet import NeuralNet
-from agents.neural_utils.neuralNet import get_optimizer
-from agents.neural_utils.neuralNet import get_criterion
-from agents.neural_utils.replayMemory import ReplayMemory, Transition
-from agents.neural_utils.plottingTools import PlottingTools
 
 
 class VanillaDeepQL(IDeepQLAgent):
-    def perceive(self, observations, reward):
-        new_state_tensor = self.transferObservationToStateVec(observations)
-        new_state_unsqueezed = new_state_tensor.unsqueeze(0)
-        # Add to replay memory
-        if (self.prev_state is not None) and (self.prev_action is not None):
-            self.memory.push(
-                self.prev_state,
-                self.prev_action,
-                new_state_unsqueezed,
-                torch.tensor(reward / self.REWARD_DIVIDER, dtype=torch.float32).unsqueeze(0)
-            )
-
-        # Do learning logic
-        self.learn_from_experience()
-
-        # Get action
-        opt_action = self.getAction(new_state_tensor)
-
-        # Cache current state and selected action
-        self.prev_action = torch.tensor(opt_action).unsqueeze(0).unsqueeze(0)
-        self.cached_state_raw = observations
-        self.prev_state = new_state_unsqueezed
-        self.steps_done += 1
-
-        return opt_action
-
-    def episode_ended(self):
-        losses = np.array(self.last_losses)
-        if self.SHOW_GRAPHS:
-            self.plotting_tools.plot_array(np.array(self.q_values_arr), "Q values")
-            self.plotting_tools.add_values_to_average_arr(losses)
-
     def learn_from_experience(self):
         if len(self.memory) < self.batch_size:
             return
@@ -83,3 +34,6 @@ class VanillaDeepQL(IDeepQLAgent):
 
         # Update epsilon
         self.decrement_epsilon()
+
+    def __str__(self):
+        return "Vanilla DeepQL"

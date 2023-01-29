@@ -17,7 +17,7 @@ from agents.neural_utils.plottingTools import PlottingTools
 class IDeepQLAgent(Agent):
     MIN_EPSILON = 0
     REWARD_DIVIDER = 100
-    SHOW_GRAPHS = True
+    SHOW_GRAPHS = False
 
     def __init__(self, refm, disc_rate, learning_rate, starting_epsilon, batch_size, tau, epsilon_decay_length):
         Agent.__init__(self, refm, disc_rate)
@@ -30,6 +30,7 @@ class IDeepQLAgent(Agent):
         self.obs_symbols = refm.getNumObsSyms()
         self.obs_cells = refm.getNumObsCells()
         self.state_vec_size = self.obs_cells * self.obs_symbols
+        self.neural_input_size = self.state_vec_size * 2
 
         self.learning_rate = learning_rate
         self.starting_epsilon = starting_epsilon
@@ -57,13 +58,45 @@ class IDeepQLAgent(Agent):
     def reset(self):
         self.memory = ReplayMemory(10000)
         # Network evaluating Q function
-        self.target_net = NeuralNet(self.state_vec_size * 2, self.num_actions)
+        self.target_net = NeuralNet(self.neural_input_size, self.num_actions)
         # Network that is learning from replay memory
         self.optimizer = get_optimizer(self.target_net, learning_rate=self.learning_rate)
         self.steps_done = 0
         self.epsilon = self.starting_epsilon
         self.q_values_arr.clear()
         self.last_losses.clear()
+
+    def perceive(self, observations, reward):
+        new_state_tensor = self.transferObservationToStateVec(observations)
+        new_state_unsqueezed = new_state_tensor.unsqueeze(0)
+        # Add to replay memory
+        if (self.prev_state is not None) and (self.prev_action is not None):
+            self.memory.push(
+                self.prev_state,
+                self.prev_action,
+                new_state_unsqueezed,
+                torch.tensor(reward / self.REWARD_DIVIDER, dtype=torch.float32).unsqueeze(0)
+            )
+
+        # Do learning logic
+        self.learn_from_experience()
+
+        # Get action
+        opt_action = self.getAction(new_state_tensor)
+
+        # Cache current state and selected action
+        self.prev_action = torch.tensor(opt_action).unsqueeze(0).unsqueeze(0)
+        self.cached_state_raw = observations
+        self.prev_state = new_state_unsqueezed
+        self.steps_done += 1
+
+        return opt_action
+
+    def episode_ended(self):
+        losses = np.array(self.last_losses)
+        if self.SHOW_GRAPHS:
+            self.plotting_tools.plot_array(np.array(self.q_values_arr), "Q values")
+            self.plotting_tools.add_values_to_average_arr(losses)
 
     def getAction(self, state):
         """
@@ -89,7 +122,7 @@ class IDeepQLAgent(Agent):
         if len(observations) != self.obs_cells:
             raise Exception("Observation is not in count as observation cells.")
 
-        state_vec = torch.zeros(self.state_vec_size*2, dtype=torch.float32)
+        state_vec = torch.zeros(self.neural_input_size, dtype=torch.float32)
         if self.cached_state_raw is not None:
             for i in range(self.obs_cells):
                 index = self.cached_state_raw[i] + i*self.obs_symbols
@@ -126,15 +159,6 @@ class IDeepQLAgent(Agent):
             self.epsilon -= self.epsilon_linear_decay
         else:
             self.epsilon = self.MIN_EPSILON
-
-    def perceive(self, observations, reward):
-        """
-        Function called by the environment when the agent has to make new action.
-        :param observations: state vector
-        :param reward: reward in given state
-        :return: Action that the agent want to take.
-        """
-        raise NotImplementedError()
 
     def learn_from_experience(self):
         """
