@@ -190,14 +190,6 @@ class DeepQL(Agent):
             state_vec[index] = 1
         return state_vec
 
-    def is_q_value_same(self, new_q_value):
-        if self.last_network_output is None:
-            return True
-        for i in range(len(self.last_network_output)):
-            if self.last_network_output[i] is not new_q_value:
-                return False
-        return True
-
     def copy_target_net_to_policy(self):
         target_net_state_dict = self.policy_net.state_dict()
         policy_net_state_dict = self.target_net.state_dict()
