@@ -225,9 +225,10 @@ def simple_mc_estimator( refm_call, agent_call, episode_length, disc_rate,
         rflip = choice([-1,1])
         perf = _test_agent( refm_call, agent_call, rflip, episode_length, disc_rate,
                             stratum, program, config )[1]
+        print("         Performance: %6i" % (perf))
         if not isnan(perf):
             result[i] = perf
-            if i%10 == 0 and i > 10:
+            if i%10 == 0 and i > 1:
                 mean = result[:i].mean()
                 half_ci = 1.96*result[:i].std(ddof=1)/sqrt(i)
                 print("         %6i  % 5.1f +/- % 5.1f " % (i, mean, half_ci))

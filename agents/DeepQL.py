@@ -22,8 +22,8 @@ from agents.neural_utils.plottingTools import PlottingTools
 
 
 class DeepQL(IDeepQLAgent):
-    def __init__(self, refm, disc_rate, learning_rate, starting_epsilon, batch_size, epsilon_decay_length, tau, update_interval_length):
-        IDeepQLAgent.__init__(self, refm, disc_rate, learning_rate, starting_epsilon, batch_size, epsilon_decay_length)
+    def __init__(self, refm, disc_rate, learning_rate, gamma, starting_epsilon, batch_size, epsilon_decay_length, tau, update_interval_length):
+        IDeepQLAgent.__init__(self, refm, disc_rate, learning_rate, gamma, starting_epsilon, batch_size, epsilon_decay_length)
         self.update_interval_length = update_interval_length
         self.tau = tau
 
@@ -49,7 +49,7 @@ class DeepQL(IDeepQLAgent):
         # Selecting their best reward with max(1)[0].
         q_next_values = None
         with torch.no_grad():
-            q_next_values = reward_batch + self.disc_rate * self.target_net(next_state_batch).max(1)[0]
+            q_next_values = reward_batch + self.gamma * self.target_net(next_state_batch).max(1)[0]
 
         # Compute loss
         loss = self.criterion(q_values, q_next_values.unsqueeze(1))

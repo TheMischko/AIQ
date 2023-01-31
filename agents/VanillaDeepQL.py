@@ -20,7 +20,7 @@ class VanillaDeepQL(IDeepQLAgent):
         # Selecting their best reward with max(1)[0].
         q_next_values = None
         with torch.no_grad():
-            q_next_values = reward_batch + self.disc_rate * self.target_net(next_state_batch).max(1)[0]
+            q_next_values = reward_batch + self.gamma * self.target_net(next_state_batch).max(1)[0]
 
         # Compute loss between neural net's Q value of action taken and result of bellman equation for next state.
         loss = self.criterion(q_values, q_next_values.unsqueeze(1))

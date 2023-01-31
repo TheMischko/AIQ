@@ -33,10 +33,10 @@ class PlottingTools(object):
             self.plot_array(avg_of_arrays, "Average figure")
             self.average_arrs.clear()
 
-    def plot_array(self, arr, title="Figure"):
+    def plot_array(self, arr, title="Figure", type="-"):
         x_points = np.array([i for i in range(len(arr))])
         y_points = np.array(arr)
 
         plt.title(title)
-        plt.plot(x_points, y_points)
+        plt.plot(x_points, y_points, type)
         plt.show()

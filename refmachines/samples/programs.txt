@@ -1,0 +1,1 @@
+,.# - vrátí to co přišlo (nejvyšší odměna je tedy za akci 4)

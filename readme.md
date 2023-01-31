@@ -6,7 +6,7 @@ Do AIQ testu byli přidáni dva agenti:
 - [Implementace](agents/VanillaDeepQL.py)
 - Příklad použití:
 ```
-python AIQ.py -r BF -a VanillaDeepQL,0.0025,1,16,1000 -l 2000 -s 200 -t 4 -d 1 -d 1
+python AIQ.py -r BF -a VanillaDeepQL,0.0025,0.7,1,16,1000 -l 2000 -s 200 -t 4
 ```
 - parametry:
   - learning rate,
@@ -18,7 +18,7 @@ python AIQ.py -r BF -a VanillaDeepQL,0.0025,1,16,1000 -l 2000 -s 200 -t 4 -d 1 -
 - [Implementace](agents/DeepQL.py)
 - Příklad použití:
 ```
-python AIQ.py -r BF -a DeepQL,0.0025,1,16,1000,0.9,100 -l 10000 -s 200 -t 4 -d 0.95
+python AIQ.py -r BF -a DeepQL,0.0025,0.7,1,16,1000,0.9,100 -l 10000 -s 200 -t 4
 ```
 - parametry:
   - learning rate,
