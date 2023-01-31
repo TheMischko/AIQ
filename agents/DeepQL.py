@@ -22,9 +22,10 @@ from agents.neural_utils.plottingTools import PlottingTools
 
 
 class DeepQL(IDeepQLAgent):
-    def __init__(self, refm, disc_rate, learning_rate, starting_epsilon, batch_size, tau, epsilon_decay_length, update_interval_length):
-        IDeepQLAgent.__init__(self, refm, disc_rate, learning_rate, starting_epsilon, batch_size, tau, epsilon_decay_length)
+    def __init__(self, refm, disc_rate, learning_rate, starting_epsilon, batch_size, epsilon_decay_length, tau, update_interval_length):
+        IDeepQLAgent.__init__(self, refm, disc_rate, learning_rate, starting_epsilon, batch_size, epsilon_decay_length)
         self.update_interval_length = update_interval_length
+        self.tau = tau
 
     def reset(self):
         IDeepQLAgent.reset(self)
@@ -67,15 +68,15 @@ class DeepQL(IDeepQLAgent):
         # Update target network
         self.steps_done += 1
         if self.steps_done % self.update_interval_length == 0:
-            self.copy_target_net_to_policy()
+            self.copy_network_weights()
 
-    def copy_target_net_to_policy(self):
+    def copy_network_weights(self):
         target_net_state_dict = self.policy_net.state_dict()
         policy_net_state_dict = self.target_net.state_dict()
         for key in target_net_state_dict:
-            policy_net_state_dict[key] = target_net_state_dict[key] * self.tau \
-                                         + policy_net_state_dict[key] * (1-self.tau)
-            self.target_net.load_state_dict(policy_net_state_dict)
+            target_net_state_dict[key] = policy_net_state_dict[key] * self.tau \
+                                         + target_net_state_dict[key] * (1-self.tau)
+            self.target_net.load_state_dict(target_net_state_dict)
 
     def __str__(self):
         return "Dualnet DeepQL"

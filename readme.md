@@ -6,12 +6,24 @@ Do AIQ testu byli přidáni dva agenti:
 - [Implementace](agents/VanillaDeepQL.py)
 - Příklad použití:
 ```
-python AIQ.py -r BF -a VanillaDeepQL,0.002,1,16,0.9,1000 -l 10000 -s 100 -t 4 -d 1
+python AIQ.py -r BF -a VanillaDeepQL,0.0025,1,16,1000 -l 2000 -s 200 -t 4 -d 1 -d 1
 ```
+- parametry:
+  - learning rate,
+  - počáteční epsilon
+  - velikost učícího batche
+  - počet učících kroků po kterých bude epsilon na minimu
 
 ### DeepQL agent s použitím dvou neuronových sítí
 - [Implementace](agents/DeepQL.py)
 - Příklad použití:
 ```
-python AIQ.py -r BF -a DeepQL,0.002,1,16,0.9,1000,100 -l 5000 -s 100 -t 4 -d 1
+python AIQ.py -r BF -a DeepQL,0.0025,1,16,1000,0.9,100 -l 10000 -s 200 -t 4 -d 0.95
 ```
+- parametry:
+  - learning rate,
+  - počáteční epsilon
+  - velikost učícího batche
+  - počet učících kroků po kterých bude epsilon na minimu
+  - tau (poměr vah při učení target network)
+  - počet učících kroků, po kterých budou překopírovány váhy z policy network do target network v poměru tau

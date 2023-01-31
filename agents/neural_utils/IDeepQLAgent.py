@@ -17,9 +17,9 @@ from agents.neural_utils.plottingTools import PlottingTools
 class IDeepQLAgent(Agent):
     MIN_EPSILON = 0
     REWARD_DIVIDER = 100
-    SHOW_GRAPHS = False
+    SHOW_GRAPHS = True
 
-    def __init__(self, refm, disc_rate, learning_rate, starting_epsilon, batch_size, tau, epsilon_decay_length):
+    def __init__(self, refm, disc_rate, learning_rate, starting_epsilon, batch_size, epsilon_decay_length):
         Agent.__init__(self, refm, disc_rate)
         self.optimizer = None
         self.policy_net = None
@@ -37,7 +37,6 @@ class IDeepQLAgent(Agent):
         self.epsilon = starting_epsilon
         self.episodes_till_min_decay = epsilon_decay_length
         self.batch_size = math.floor(batch_size)
-        self.tau = tau
         self.criterion = get_criterion()
 
         self.cached_state_raw = None
@@ -88,7 +87,6 @@ class IDeepQLAgent(Agent):
         self.prev_action = torch.tensor(opt_action).unsqueeze(0).unsqueeze(0)
         self.cached_state_raw = observations
         self.prev_state = new_state_unsqueezed
-        self.steps_done += 1
 
         return opt_action
 
