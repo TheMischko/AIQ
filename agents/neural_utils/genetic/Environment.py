@@ -1,5 +1,6 @@
 import math
 import random
+import time
 
 import numpy as np
 import multiprocessing as mp
@@ -30,6 +31,7 @@ class Environment:
         population = self.create_population(self.pop_size)
         best_individuals = None
         for i in range(self.iterations):
+            start_time = time.time()
             scores = self.evalute_population(population)
             best_indices = self.select_best_individuals(scores).tolist()
             best_individuals = [population[j] for j in best_indices ]
@@ -67,6 +69,10 @@ class Environment:
                     )
                 )
                 population = self.regenerate_same_genomes(population)
+            if log:
+                print("Took time %f" % (time.time()-start_time))
+                print("___________________________________________")
+
 
         value_list = [best_individuals[i].eval() for i in range(len(best_individuals))]
         best_index = np.argmax(np.array(value_list))

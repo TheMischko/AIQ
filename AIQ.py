@@ -18,6 +18,7 @@ from multiprocessing import Pool
 
 import getopt, sys, os
 
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Test an agent by performing both positive and negative reward runs in order
 # to get antithetic variance reduction. 

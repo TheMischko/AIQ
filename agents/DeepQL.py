@@ -79,4 +79,12 @@ class DeepQL(IDeepQLAgent):
             self.target_net.load_state_dict(target_net_state_dict)
 
     def __str__(self):
-        return "Dualnet DeepQL"
+        return "Dualnet DeepQL(%f,%f,%f,%d,%d,%f,%d)" % (
+            self.learning_rate,
+            self.gamma,
+            self.starting_epsilon,
+            self.batch_size,
+            self.episodes_till_min_decay,
+            self.tau,
+            self.update_interval_length
+        )
