@@ -1,0 +1,185 @@
+import math
+import random
+import numpy as np
+import torch
+
+import binascii
+import os
+
+from ..Agent import Agent
+from agents.neural_utils.neuralNet import NeuralNet
+from agents.neural_utils.neuralNet import get_optimizer
+from agents.neural_utils.neuralNet import get_criterion
+from agents.neural_utils.replayMemory import ReplayMemory, Transition
+from agents.neural_utils.plottingTools import PlottingTools
+
+
+class IDeepQLAgent(Agent):
+    START_EPSILON = 1.0
+    MIN_EPSILON = 0
+    REWARD_DIVIDER = 100
+    SHOW_GRAPHS = False
+    PLOT_ACTIONS_TAKEN = False
+    PLOT_REWARDS = False
+
+    def __init__(self, refm, disc_rate, learning_rate, gamma, batch_size, epsilon_decay_length, neural_size_l1,
+                 neural_size_l2, neural_size_l3):
+        Agent.__init__(self, refm, disc_rate)
+        self.optimizer = None
+        self.neural_size_l1 = neural_size_l1
+        self.neural_size_l2 = neural_size_l2
+        self.neural_size_l3 = neural_size_l3
+        self.policy_net = None
+        self.target_net = None
+        self.memory = None
+        self.ref_machine = refm
+        self.num_states = refm.getNumObs()  # assuming that states = observations
+        self.obs_symbols = refm.getNumObsSyms()
+        self.obs_cells = refm.getNumObsCells()
+        self.state_vec_size = self.obs_cells * self.obs_symbols
+        self.neural_input_size = self.state_vec_size * 2
+        self.gamma = gamma
+
+        self.learning_rate = learning_rate
+        self.starting_epsilon = self.START_EPSILON
+        self.epsilon = self.START_EPSILON
+        self.episodes_till_min_decay = epsilon_decay_length
+        self.batch_size = math.floor(batch_size)
+        self.criterion = get_criterion()
+
+        self.cached_state_raw = None
+        self.prev_state = None
+        self.prev_action = None
+        self.TERMINAL_TOKEN = "TERMINAL"
+        self.steps_done = 0
+
+        # Plotting data
+        self.last_losses = list()
+        self.q_values_arr = list()
+        self.id = binascii.b2a_hex(os.urandom(8))
+        self.last_network_output = None
+        self.actions_taken = list()
+        self.rewards_given = list()
+
+        self.plotting_tools = PlottingTools()
+        self.epsilon_linear_decay = (self.starting_epsilon - self.MIN_EPSILON) / self.episodes_till_min_decay
+
+    def reset(self):
+        self.memory = ReplayMemory(10000)
+        # Network evaluating Q function
+        self.target_net = NeuralNet(self.neural_input_size, self.num_actions, self.neural_size_l1, self.neural_size_l2, self.neural_size_l3)
+        # Network that is learning from replay memory
+        self.optimizer = get_optimizer(self.target_net, learning_rate=self.learning_rate)
+        self.steps_done = 0
+        self.epsilon = self.starting_epsilon
+        self.q_values_arr.clear()
+        self.last_losses.clear()
+
+    def perceive(self, observations, reward):
+        new_state_tensor = self.transferObservationToStateVec(observations)
+        new_state_unsqueezed = new_state_tensor.unsqueeze(0)
+        # Add to replay memory
+        if (self.prev_state is not None) and (self.prev_action is not None):
+            self.memory.push(
+                self.prev_state,
+                self.prev_action,
+                new_state_unsqueezed,
+                torch.tensor(reward / self.REWARD_DIVIDER, dtype=torch.float32).unsqueeze(0)
+            )
+        self.rewards_given.append(reward / self.REWARD_DIVIDER)
+
+        # Do learning logic
+        self.learn_from_experience()
+
+        # Get action
+        opt_action = self.getAction(new_state_tensor)
+
+        # Cache current state and selected action
+        self.prev_action = torch.tensor(opt_action).unsqueeze(0).unsqueeze(0)
+        self.cached_state_raw = observations
+        self.prev_state = new_state_unsqueezed
+
+        return opt_action
+
+    def episode_ended(self):
+        losses = np.array(self.last_losses)
+        if self.SHOW_GRAPHS:
+            self.plotting_tools.plot_array(np.array(self.q_values_arr), "Q values")
+            self.plotting_tools.add_values_to_average_arr(losses)
+        if self.PLOT_ACTIONS_TAKEN:
+            self.plotting_tools.plot_array(np.array(self.actions_taken), "Actions taken", type="o")
+        if self.PLOT_REWARDS and len(self.rewards_given) > 0:
+            self.plotting_tools.plot_array(np.array(self.rewards_given), "Rewards", type="o")
+
+    def getAction(self, state):
+        """
+          Compute the action to take in the current state.  With
+          probability self.epsilon, random action will be taken or
+          otherwise the best policy action will be taken.
+        """
+        is_random = random.random() < self.epsilon
+        legal_actions = [action for action in range(self.num_actions)]
+        action = None
+        if is_random:
+            action = random.choice(legal_actions)
+        else:
+            action = self.computeActionFromQValue(state)
+        self.actions_taken.append(action)
+        return action
+
+    def computeActionFromQValue(self, state):
+        with torch.no_grad():
+            action_values = self.target_net.forward(state).tolist()
+            best_q_value = np.max(action_values)
+            self.q_values_arr.append(best_q_value)
+            policy = np.argmax(action_values)
+
+            return policy
+
+    def transferObservationToStateVec(self, observations):
+        if len(observations) != self.obs_cells:
+            raise Exception("Observation is not in count as observation cells.")
+
+        state_vec = torch.zeros(self.neural_input_size, dtype=torch.float32)
+        if self.cached_state_raw is not None:
+            for i in range(self.obs_cells):
+                index = self.cached_state_raw[i] + i*self.obs_symbols
+                state_vec[index] = 1
+
+        for i in range(self.obs_cells):
+            index = observations[i] + (i+self.obs_cells)*self.obs_symbols
+            state_vec[index] = 1
+        return state_vec
+
+    def get_learning_batches(self):
+        """
+        Samples batches of self.batch_size size of states, actions, rewards
+        and next state values.
+        :return: tuple with values as (state_batch, action_batch, reward_batch, next_states)
+        """
+        # Get random sample from replay memory
+        transitions = self.memory.sample(self.batch_size)
+        # Transpose the batch
+        # This converts batch-array of Transitions to Transition of batch-arrays
+        batch = Transition(*zip(*transitions))
+        # Connects values from transition into single arrays
+        state_batch = torch.cat(batch.state)
+        action_batch = torch.cat(batch.action)
+        reward_batch = torch.cat(batch.reward)
+        next_states = torch.cat(batch.next_state)
+        return state_batch, action_batch, reward_batch, next_states
+
+    def decrement_epsilon(self):
+        """
+        Decrements epsilon by calculated step until it hits self.MIN_EPSILON
+        """
+        if self.epsilon > self.MIN_EPSILON:
+            self.epsilon -= self.epsilon_linear_decay
+        else:
+            self.epsilon = self.MIN_EPSILON
+
+    def learn_from_experience(self):
+        """
+        Function that should handle learning of agent's neural net.
+        """
+        raise NotImplementedError()

@@ -20,12 +20,14 @@ import numpy
 
 import getopt, sys, os
 
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Test an agent by performing both positive and negative reward runs in order
 # to get antithetic variance reduction. 
 def test_agent( refm_call, a_call, episode_length, disc_rate, stratum, program, config ):
 
     # run twice with flipped reward second time
+
     s1, r1, ir1 = _test_agent(refm_call, a_call,  1.0, episode_length,
                          disc_rate, stratum, program, config)
     s2, r2, ir2 = _test_agent(refm_call, a_call, -1.0, episode_length,
@@ -144,6 +146,7 @@ def _test_agent( refm_call, agent_call, rflip, episode_length,
         if config["multi_rounding_el"] and not mrel_stop:
             mrel_stop, converged_reward = evaluate_mrel_stopping_condition( disc_rewards, i, config )
             config["mrel_rewards"].append( disc_reward )
+    agent.episode_ended()
 
     if (config["agent_symbol_debug"]):
         with open(config["agent_symbol_debug_files"]["symbols"],"a") as symbols:
@@ -161,6 +164,7 @@ def _test_agent( refm_call, agent_call, rflip, episode_length,
                 symbols.write(str(value) + " ")
             symbols.write("\n")
             symbols.close()
+
     # normalise and possibly discount reward
     disc_reward = normalise_reward( episode_length, disc_rate, disc_reward )
 
@@ -275,9 +279,10 @@ def simple_mc_estimator( refm_call, agent_call, episode_length, disc_rate,
         rflip = choice([-1,1])
         perf = _test_agent( refm_call, agent_call, rflip, episode_length, disc_rate,
                             stratum, program, config )[1]
+        print("         Performance: %6i" % (perf))
         if not isnan(perf):
             result[i] = perf
-            if i%10 == 0 and i > 10:
+            if i%10 == 0 and i > 1:
                 mean = result[:i].mean()
                 half_ci = 1.96*result[:i].std(ddof=1)/sqrt(i)
                 print("         %6i  % 5.1f +/- % 5.1f " % (i, mean, half_ci))
