@@ -1,3 +1,4 @@
+import copy
 import random
 
 
@@ -32,7 +33,7 @@ class IGenomeGenerator:
         """
         if n_changes > len(self.part_generators):
             raise Exception("Number of changes cannot be bigger than size of the genome.")
-        new_genome = genome
+        new_genome = copy.deepcopy(genome)
         indices = [i for i in range(len(self.part_generators))]
         indices_to_change = random.sample(indices, n_changes)
         for i in indices_to_change:
@@ -42,7 +43,7 @@ class IGenomeGenerator:
     def crossover_genomes(self, genome_1, genome_2, n_changes):
         if n_changes > len(self.part_generators):
             raise Exception("Number of changes cannot be bigger than size of the genome.")
-        new_genome = genome_1
+        new_genome = copy.deepcopy(genome_1)
         indices = [i for i in range(len(self.part_generators))]
         indices_to_change = random.sample(indices, n_changes)
         for i in indices_to_change:

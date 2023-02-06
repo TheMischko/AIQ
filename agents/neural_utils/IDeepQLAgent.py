@@ -15,15 +15,20 @@ from agents.neural_utils.plottingTools import PlottingTools
 
 
 class IDeepQLAgent(Agent):
+    START_EPSILON = 1.0
     MIN_EPSILON = 0
     REWARD_DIVIDER = 100
     SHOW_GRAPHS = False
     PLOT_ACTIONS_TAKEN = False
     PLOT_REWARDS = False
 
-    def __init__(self, refm, disc_rate, learning_rate, gamma, starting_epsilon, batch_size, epsilon_decay_length):
+    def __init__(self, refm, disc_rate, learning_rate, gamma, batch_size, epsilon_decay_length, neural_size_l1,
+                 neural_size_l2, neural_size_l3):
         Agent.__init__(self, refm, disc_rate)
         self.optimizer = None
+        self.neural_size_l1 = neural_size_l1
+        self.neural_size_l2 = neural_size_l2
+        self.neural_size_l3 = neural_size_l3
         self.policy_net = None
         self.target_net = None
         self.memory = None
@@ -36,8 +41,8 @@ class IDeepQLAgent(Agent):
         self.gamma = gamma
 
         self.learning_rate = learning_rate
-        self.starting_epsilon = starting_epsilon
-        self.epsilon = starting_epsilon
+        self.starting_epsilon = self.START_EPSILON
+        self.epsilon = self.START_EPSILON
         self.episodes_till_min_decay = epsilon_decay_length
         self.batch_size = math.floor(batch_size)
         self.criterion = get_criterion()
@@ -57,12 +62,12 @@ class IDeepQLAgent(Agent):
         self.rewards_given = list()
 
         self.plotting_tools = PlottingTools()
-        self.epsilon_linear_decay = (starting_epsilon - self.MIN_EPSILON) / self.episodes_till_min_decay
+        self.epsilon_linear_decay = (self.starting_epsilon - self.MIN_EPSILON) / self.episodes_till_min_decay
 
     def reset(self):
         self.memory = ReplayMemory(10000)
         # Network evaluating Q function
-        self.target_net = NeuralNet(self.neural_input_size, self.num_actions)
+        self.target_net = NeuralNet(self.neural_input_size, self.num_actions, self.neural_size_l1, self.neural_size_l2, self.neural_size_l3)
         # Network that is learning from replay memory
         self.optimizer = get_optimizer(self.target_net, learning_rate=self.learning_rate)
         self.steps_done = 0

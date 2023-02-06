@@ -7,7 +7,9 @@ class Individual:
     def eval(self):
         if self.value is None:
             self.value = self.eval_fnc(self.genome)
-        return self.value
+            return self.value
+        else:
+            return self.value
 
     def change_genome(self, new_genome):
         self.genome = new_genome

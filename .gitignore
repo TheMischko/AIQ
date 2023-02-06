@@ -3,3 +3,4 @@
 __pycache__
 agents/__pycache__
 refmachines/__pycache__
+agents/neural_utils/genetic/logs
