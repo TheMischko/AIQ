@@ -7,6 +7,7 @@
 # Copyright Shane Legg 2011
 # Released under the GNU GPLv3
 #
+import time
 
 from refmachines import *
 from agents import *
@@ -15,6 +16,7 @@ from time import sleep, localtime, strftime
 from numpy import ones, zeros, floor, array, sqrt, log, ceil, cov
 from random import choice
 from multiprocessing import Pool
+import numpy
 
 import getopt, sys, os
 
@@ -33,11 +35,8 @@ def test_agent( refm_call, a_call, episode_length, disc_rate, stratum, program, 
 
     # log successful result to file
     if config["logging"] and not isnan(r1) and not isnan(r2):
-        log_file = open( config["log_file_name"], 'a' )
-        log_file.write( strftime("%Y_%m%d_%H:%M:%S ",localtime()) \
-              + str(s1) + " " + str(r1) + " " + str(r2) + "\n" )
-        log_file.flush()
-        log_file.close()
+        with open(config["log_file_name"], 'a' ) as log_file:
+            log_file.write( strftime("%Y_%m%d_%H:%M:%S ",localtime()) + str(s1) + " " + str(r1) + " " + str(r2) + "\n" )
 
     # log successful intermediate results to files
     if config["logging_el"] and not isnan(r1) and not isnan(r2):
@@ -59,6 +58,15 @@ def test_agent( refm_call, a_call, episode_length, disc_rate, stratum, program, 
 
     return (s1,r1,r2)
 
+
+def delist(i,array,depth):
+    if isinstance(i,list) or isinstance(i,numpy.ndarray):
+        # print(str(i) + "-" + str(depth))
+        for j in i:
+            delist(j,array,depth+1)
+    else:
+        if i not in array:
+            array.append(int(i))
 
 # Perform a single run of an agent in an enviornment and collect the results
 def _test_agent( refm_call, agent_call, rflip, episode_length,
@@ -83,12 +91,39 @@ def _test_agent( refm_call, agent_call, rflip, episode_length,
     estimated_ioc = 0
     convergence_logged = False
 
+    episode_clean_symbols = []
+    episode_symbols = []
+    episode_actions = []
+
     for i in range(1, episode_length + 1 ):
         # test only if not sufficiently converged
         # or if no mrel optimalization used
         if not mrel_stop:
-            action = agent.perceive( observations, rflip*reward )
+            try:
+                action = agent.perceive( observations, rflip*reward )
+            except ValueError as e:
+                with open('log/' + agent.__str__() + time.strftime("_%Y_%m%d_%H_%M_%S", time.localtime()) + '_Exception.log', 'a') as errorFile:
+                    exception_log = f'{str(stratum)} : {program} \n'
+                    errorFile.write(exception_log)
+                action = 2
+
+
             reward, observations, steps = refm.act( action )
+
+            if(config["agent_symbol_debug"]):
+                if action not in episode_actions:
+                    episode_actions.append(action)
+
+                if observations not in episode_symbols:
+                    episode_symbols.append(observations)
+
+                if observations not in episode_clean_symbols:
+                    if isinstance(observations,int):
+                        value = observations
+                        if value not in episode_clean_symbols:
+                            episode_clean_symbols.append(value)
+                    elif isinstance(observations,list) or isinstance(observations,numpy.ndarray):
+                        delist(observations,episode_clean_symbols,0)
 
             # we signal failure with a NaN so as not to upset
             # the parallel map running this with an exception
@@ -112,6 +147,24 @@ def _test_agent( refm_call, agent_call, rflip, episode_length,
             mrel_stop, converged_reward = evaluate_mrel_stopping_condition( disc_rewards, i, config )
             config["mrel_rewards"].append( disc_reward )
     agent.episode_ended()
+
+    if (config["agent_symbol_debug"]):
+        with open(config["agent_symbol_debug_files"]["symbols"],"a") as symbols:
+            symbols.write(str(episode_symbols) + "\n")
+            symbols.close()
+
+        with open(config["agent_symbol_debug_files"]["better_symbols"], "a") as symbols:
+            for value in episode_clean_symbols:
+                symbols.write(str(value) + " ")
+            symbols.write("\n")
+            symbols.close()
+
+        with open(config["agent_symbol_debug_files"]["actions"], "a") as symbols:
+            for value in episode_actions:
+                symbols.write(str(value) + " ")
+            symbols.write("\n")
+            symbols.close()
+
     # normalise and possibly discount reward
     disc_reward = normalise_reward( episode_length, disc_rate, disc_reward )
 
@@ -446,7 +499,7 @@ def usage():
     print ("python AIQ -r reference_machine[,param1[,param2[...]]] "
         + "-a agent[,param1[,agent_param2[...]]] "
         + "-d discount_rate [-s sample_size] [-l episode_length] "
-        + "[-n cluster_node] [-t threads] [--log] [--save_samples] "
+        + "[-n cluster_node] [-t threads] [--log] [--save_samples] [--agent_symbol_debug] "
         + "[--verbose_log_el] [--simple_mc]"
         + "[--multi_round_el=method[,param1[,param2[...]]]"
         + "[--debug_mrel]")
@@ -466,22 +519,23 @@ mrel_params = []
 mrel_rewards = []
 debuging_mrel = False
 mrel_debug_file = None
+agent_symbol_debug = False
 
 def main():
 
-    global logging, log_file, sampling, adaptive_sample_file
+    global logging, log_file, sampling, adaptive_sample_file,agent_symbol_debug
     global logging_el, log_el_files, intermediate_length
     global multi_rounding_el, mrel_method, mrel_params, mrel_rewards
     global debuging_mrel, mrel_debug_file
 
     print()
-    print("AIQ version 1.0")
+    print("AIQ version 2.1")
     print()
     # get the command line arguments
     try:
         opts, args = getopt.getopt(sys.argv[1:], "r:d:l:a:n:s:t:",
                                    ["multi_round_el=", "help", "log", "simple_mc",
-                                    "save_samples", "verbose_log_el", "debug_mrel"])
+                                    "save_samples", "verbose_log_el", "debug_mrel","agent_symbol_debug"])
     except getopt.GetoptError as err:
         print(str(err))
         usage()
@@ -526,6 +580,7 @@ def main():
         elif opt == "--save_samples":   sampling    = True
         elif opt == "--simple_mc":      simple_mc   = True
         elif opt == "--verbose_log_el": logging_el  = True
+        elif opt == "--agent_symbol_debug": agent_symbol_debug = True
         elif opt == "--multi_round_el":
             multi_rounding_el  = True
             args = arg.split(",")
@@ -711,6 +766,25 @@ def main():
             if multi_rounding_el:
                 raise NameError("multi-round EL convergence possible only with verbose EL logging")
 
+    agent_symbol_debug_filepaths = {}
+    if agent_symbol_debug:
+        if not os.path.exists("./symbol-debug/" ):
+            os.makedirs("./symbol-debug")
+
+        agent_symbol_debug_filepaths = {"symbols" : "./symbol-debug/refm_symbols",
+                                        "better_symbols" : "./symbol-debug/refm_better_symbols",
+                                        "actions" : "./symbol-debug/refm_actions"}
+
+        with open("./symbol-debug/refm_symbols", "w") as symbols:
+            symbols.write("List of unique data passed to agent every episode:" + "\n")
+
+        with open("./symbol-debug/refm_better_symbols", "w") as symbols:
+            symbols.write("List of unique data passed to agent every episode:" + "\n")
+
+        with open("./symbol-debug/refm_actions", "w") as actions:
+            actions.write("List of unique data passed to agent every episode:" + "\n")
+
+
     # Assignment for dictionary even if not used
     mrel_debug_file_name = ''
     # set up file to save multi-round EL convergence debug informations
@@ -745,7 +819,9 @@ def main():
         "mrel_params": mrel_params,
         "mrel_rewards": mrel_rewards,
         "debuging_mrel": debuging_mrel,
-        "mrel_debug_file": mrel_debug_file_name
+        "mrel_debug_file": mrel_debug_file_name,
+        "agent_symbol_debug": agent_symbol_debug,
+        "agent_symbol_debug_files": agent_symbol_debug_filepaths,
     }
 
     # run an estimation algorithm
