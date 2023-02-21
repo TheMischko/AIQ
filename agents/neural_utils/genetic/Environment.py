@@ -13,7 +13,8 @@ import datetime
 
 
 class Environment:
-    def __init__(self, genome_generator, scoring_function, pop_size, num_select_best, iterations, seed_genomes = None):
+    def __init__(self, genome_generator, scoring_function, pop_size, num_select_best, iterations, num_agents, scoring_params=None,
+                 seed_genomes=None):
         """
         :param IGenomeGenerator genome_generator:
         :param scoring_function:
@@ -23,8 +24,10 @@ class Environment:
         """
         self.genome_generator = genome_generator
         self.scoring_function = scoring_function
+        self.scoring_params = scoring_params
         self.pop_size = pop_size
         self.iterations = iterations
+        self.num_sim_agents = num_agents
         self.num_select_best = num_select_best
         self.num_mutations = math.floor((self.pop_size - self.num_select_best)/2)
         self.num_crossover = self.pop_size - self.num_select_best - self.num_mutations
@@ -57,7 +60,9 @@ class Environment:
                 population.append(
                     Individual(
                         mutated_genome,
-                        self.scoring_function)
+                        self.scoring_function,
+                        self.scoring_params
+                    )
                 )
 
             # Create children from best found genomes
@@ -73,7 +78,8 @@ class Environment:
                             best_individuals[genome2_to_mutate].get_genome(),
                             self.num_changes
                         ),
-                        self.scoring_function
+                        self.scoring_function,
+                        self.scoring_params
                     )
                 )
                 population = self.regenerate_same_genomes(population)
@@ -88,11 +94,11 @@ class Environment:
         population = list()
         for i in range(size):
             genome = self.genome_generator.generate_genome()
-            population.append(Individual(genome, self.scoring_function))
+            population.append(Individual(genome, self.scoring_function, self.scoring_params))
         return population
 
     def evalute_population(self, population):
-        allowed_threads = 4
+        allowed_threads = self.num_sim_agents
         pool = mp.Pool(allowed_threads)
         iterations = math.floor(self.pop_size / allowed_threads)
         values = list()
@@ -129,7 +135,8 @@ class Environment:
             if population[i] is None:
                 population[i] = Individual(
                     self.genome_generator.generate_genome(),
-                    self.scoring_function
+                    self.scoring_function,
+                    self.scoring_params
                 )
         return population
 
@@ -152,14 +159,14 @@ class Environment:
             if i >= self.pop_size:
                 break
             if len(seed_genomes[i]) == len(self.genome_generator.part_generators):
-                population.append(Individual(seed_genomes[i], self.scoring_function))
+                population.append(Individual(seed_genomes[i], self.scoring_function, self.scoring_params))
 
         num_new_needed = self.pop_size-len(population)
         if num_new_needed <= 0:
             return population
         for i in range(num_new_needed):
             genome = self.genome_generator.generate_genome()
-            population.append(Individual(genome, self.scoring_function))
+            population.append(Individual(genome, self.scoring_function, self.scoring_params))
         return population
 
 

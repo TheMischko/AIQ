@@ -4,3 +4,6 @@ __pycache__
 agents/__pycache__
 refmachines/__pycache__
 agents/neural_utils/genetic/logs
+meta_test.py
+test_file.txt
+meta_run_script.sh

@@ -1,12 +1,13 @@
 class Individual:
-    def __init__(self, initial_genome, eval_fnc):
+    def __init__(self, initial_genome, eval_fnc, eval_params):
         self.genome = initial_genome
         self.eval_fnc = eval_fnc
+        self.eval_params = eval_params
         self.value = None
 
     def eval(self):
         if self.value is None:
-            self.value = self.eval_fnc(self.genome)
+            self.value = self.eval_fnc(self.genome, self.eval_params)
             return self.value
         else:
             return self.value
