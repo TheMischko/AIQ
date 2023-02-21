@@ -8,8 +8,10 @@ def eval_weights(genome, eval_params):
         iterations = eval_params["iterations"] or ITERATION_COUNT
         samples = eval_params["samples"] or BATCH_SIZE
         threads = eval_params["threads"] or 2
+        path = os.getcwd().split("AIQ")[0] + "AIQ/AIQ.py"
         output = os.popen(
-            "python E:\VSE_2022Z\DP\AIQ\AIQ.py -r BF -a DeepQL,%f,%f,%d,%d,%d,%d,%d,%f,%d -l %d -s %d -t %d" % (
+            "python %s -r BF -a DeepQL,%f,%f,%d,%d,%d,%d,%d,%f,%d -l %d -s %d -t %d" % (
+                path,
                 genome[0], genome[1], genome[2], genome[3], genome[4], genome[5], genome[6], genome[7], genome[8],
                 iterations, samples, threads
             )).read()
