@@ -35,6 +35,9 @@ class Environment:
         self.num_changes = 4
         self.seed_genomes = seed_genomes
 
+        f = open(self.log_file, "x", encoding="UTF-8")
+        f.close()
+
     def simulate(self, log=False):
         if self.seed_genomes is None:
             population = self.create_population(self.pop_size)
