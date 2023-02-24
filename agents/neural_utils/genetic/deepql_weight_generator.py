@@ -15,17 +15,17 @@ class DeepQLWeightGenerator(IGenomeGenerator):
             lambda: 2**(random.randint(2, 9)),
             # Epsilon decay length - number of steps till epsilon is min value
             # values are in range [200, 1000]
-            lambda: random.randint(20, 100) * 10,
+            lambda: random.randint(4, 20) * 50,
             # Size of neural net layer 1
-            lambda: random.randint(1, 32) * 8,
+            lambda: random.randint(1, 16) * 16,
             # Size of neural net layer 2
-            lambda: random.randint(1, 32) * 8,
+            lambda: random.randint(1, 16) * 16,
             # Size of neural net layer 3 (can be zero)
-            lambda: random.randint(1, 8) * 16 if random.random() > 0.5 else 0,
+            lambda: random.randint(1, 16) * 16 if random.random() > 0.35 else 0,
             # Tau in range [0, 1]
             lambda: float(random.randint(0, 100)) / 100,
             # Update interval length in length [10, 1000]
-            lambda: random.randint(1, 100) * 10
+            lambda: random.randint(2, 50) * 20
 
         ]
         return part_generator

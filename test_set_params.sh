@@ -1,8 +1,7 @@
 #!/bin/bash
-#PBS -N DeepQL_Genetic_Alg
-#PBS -l select=1:ncpus=24:mem=32gb:scratch_local=1gb
-#PBS -l walltime=72:00:00
-#PBS -m ae
+#PBS -N DeepQL_Test_Params
+#PBS -l select=1:ncpus=8:mem=8gb:scratch_local=1gb
+#PBS -l walltime=1:00:00
 
 DATADIR=/auto/vestec1-elixir/home/dvom24
 
@@ -27,11 +26,13 @@ git clone https://github.com/TheMischko/AIQ.git || { echo >&2 "Error while copyi
 
 echo "Git repository was successfully cloned." >> $DATADIR/jobs_info.txt
 
-cd AIQ/
+cd AIQ/ || { echo >&2 "Error while moving into AIQ dir.!"; exit 3; }
 
 echo "Starting python script." >> $DATADIR/test_set_params_out.txt
 
-python test_set_params >> $DATADIR/test_set_params_out.txt 2> $DATADIR/test_set_params_err.txt
+python test_set_params.py >> $DATADIR/test_set_params_out.txt 2> $DATADIR/test_set_params_err.txt
+
+echo "Python script finished." >> $DATADIR/test_set_params_out.txt
 
 # clean the SCRATCH directory
 clean_scratch
