@@ -62,7 +62,7 @@ class IDeepQLAgent(Agent):
         self.rewards_given = list()
 
         self.plotting_tools = PlottingTools()
-        self.epsilon_linear_decay = (self.starting_epsilon - self.MIN_EPSILON) / self.episodes_till_min_decay
+        self.epsilon_linear_decay = 0 if self.episodes_till_min_decay == 0 else (self.starting_epsilon - self.MIN_EPSILON) / self.episodes_till_min_decay
 
     def reset(self):
         self.memory = ReplayMemory(10000)
@@ -173,6 +173,8 @@ class IDeepQLAgent(Agent):
         """
         Decrements epsilon by calculated step until it hits self.MIN_EPSILON
         """
+        if self.episodes_till_min_decay == 0:
+            return
         if self.epsilon > self.MIN_EPSILON:
             self.epsilon -= self.epsilon_linear_decay
         else:
@@ -183,3 +185,6 @@ class IDeepQLAgent(Agent):
         Function that should handle learning of agent's neural net.
         """
         raise NotImplementedError()
+
+    def get_parsable_name(self):
+        return "deepql"

@@ -7,3 +7,4 @@ agents/neural_utils/genetic/logs
 meta_test.py
 test_file.txt
 meta_run_script.sh
+test_set_params.sh
