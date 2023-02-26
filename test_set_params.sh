@@ -1,11 +1,11 @@
 #!/bin/bash
 #PBS -N DeepQL_Test_Params
-#PBS -l select=1:ncpus=8:mem=8gb:scratch_local=1gb
-#PBS -l walltime=1:00:00
+#PBS -l select=1:ncpus=8:mem=16gb:scratch_local=1gb
+#PBS -l walltime=16:00:00
 
 DATADIR=/auto/vestec1-elixir/home/dvom24
 
-echo "$PBS_JOBID is running on node `hostname -f` in a scratch directory $SCRATCHDIR" >> $DATADIR/jobs_info.txt
+echo "$PBS_JOBID is running on node `hostname -f` in a scratch directory $SCRATCHDIR" >> $DATADIR/test_set_params_out.txt
 
 module add python
 module add python36-modules-gcc
@@ -24,7 +24,7 @@ cd $SCRATCHDIR
 
 git clone https://github.com/TheMischko/AIQ.git || { echo >&2 "Error while copying git repository!"; exit 2; }
 
-echo "Git repository was successfully cloned." >> $DATADIR/jobs_info.txt
+echo "Git repository was successfully cloned." >> $DATADIR/test_set_params_out.txt
 
 cd AIQ/ || { echo >&2 "Error while moving into AIQ dir.!"; exit 3; }
 
