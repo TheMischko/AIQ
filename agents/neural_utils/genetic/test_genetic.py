@@ -49,9 +49,9 @@ if __name__ == '__main__':
         "samples": samples,
         "threads": threads
     }, seed_genomes=[
-        [0.00205, 0.9, 32, 600, 64, 208, 176, 0.25, 60],
         [0.00298, 0.19, 32, 300, 64, 96, 176, 0.25, 60],
-        [0.00134, 0.8, 32, 3000, 256, 248, 0, 0.25, 60]
+        [0.00468, 0.33, 32, 300, 64, 224, 176, 0.25, 60],
+        [0.00327, 0.4, 32, 600, 128, 224, 176, 0.25, 60]
     ])
     print_header(pop_size, num_select, epochs, iterations, samples, agents, threads)
     result = gen_env.simulate(log=True)
