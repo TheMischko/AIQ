@@ -1,11 +1,13 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import atexit
 
 
 def normalized(a, axis=-1, order=2):
     l2 = np.atleast_1d(np.linalg.norm(a, order, axis))
     l2[l2==0] = 1
-    return a / np.expand_dims(l2, axis)
+    divider = np.expand_dims(l2, axis)
+    return a / divider
 
 
 def singleton(class_):
@@ -24,14 +26,17 @@ class PlottingTools(object):
     def __init__(self):
         self.average_arrs = list()
 
-    def add_values_to_average_arr(self, values_arr):
-        self.average_arrs.append(values_arr)
-        if len(self.average_arrs) >= self.NUM_AVERAGE_OVER_INPUTS:
+    def on_exit(self):
+        if len(self.average_arrs) > 0:
             np_average_arrs = np.array(self.average_arrs)
-            arrs_normalized = normalized(np_average_arrs, axis=0)
             avg_of_arrays = np.average(np_average_arrs, 0)
-            self.plot_array(avg_of_arrays, "Average figure")
+            self.plot_array(avg_of_arrays, "Average loss figure")
             self.average_arrs.clear()
+
+    def add_values_to_average_arr(self, values_arr):
+        if len(values_arr) > 0:
+            self.average_arrs.append(values_arr)
+
 
     def plot_array(self, arr, title="Figure", type="-"):
         x_points = np.array([i for i in range(len(arr))])

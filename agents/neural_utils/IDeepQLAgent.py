@@ -18,7 +18,8 @@ class IDeepQLAgent(Agent):
     START_EPSILON = 1.0
     MIN_EPSILON = 0
     REWARD_DIVIDER = 100
-    SHOW_GRAPHS = False
+    PLOT_Q_VALUES = False
+    PLOT_LOSS = True
     PLOT_ACTIONS_TAKEN = False
     PLOT_REWARDS = False
 
@@ -65,6 +66,17 @@ class IDeepQLAgent(Agent):
         self.epsilon_linear_decay = 0 if self.episodes_till_min_decay == 0 else (self.starting_epsilon - self.MIN_EPSILON) / self.episodes_till_min_decay
 
     def reset(self):
+        if self.steps_done > 0:
+            losses = np.array(self.last_losses)
+            if self.PLOT_Q_VALUES:
+                self.plotting_tools.plot_array(np.array(self.q_values_arr), "Q values")
+            if self.PLOT_LOSS and len(self.last_losses) > 100:
+                self.plotting_tools.add_values_to_average_arr(losses)
+            if self.PLOT_ACTIONS_TAKEN:
+                self.plotting_tools.plot_array(np.array(self.actions_taken), "Actions taken", type="o")
+            if self.PLOT_REWARDS and len(self.rewards_given) > 0:
+                self.plotting_tools.plot_array(np.array(self.rewards_given), "Rewards", type="o")
+
         self.memory = ReplayMemory(10000)
         # Network evaluating Q function
         self.target_net = NeuralNet(self.neural_input_size, self.num_actions, self.neural_size_l1, self.neural_size_l2, self.neural_size_l3)
@@ -102,14 +114,8 @@ class IDeepQLAgent(Agent):
         return opt_action
 
     def episode_ended(self):
-        losses = np.array(self.last_losses)
-        if self.SHOW_GRAPHS:
-            self.plotting_tools.plot_array(np.array(self.q_values_arr), "Q values")
-            self.plotting_tools.add_values_to_average_arr(losses)
-        if self.PLOT_ACTIONS_TAKEN:
-            self.plotting_tools.plot_array(np.array(self.actions_taken), "Actions taken", type="o")
-        if self.PLOT_REWARDS and len(self.rewards_given) > 0:
-            self.plotting_tools.plot_array(np.array(self.rewards_given), "Rewards", type="o")
+        pass
+
 
     def getAction(self, state):
         """
