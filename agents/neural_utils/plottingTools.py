@@ -37,10 +37,9 @@ class PlottingTools(object):
         if len(values_arr) > 0:
             self.average_arrs.append(values_arr)
 
-
-    def plot_array(self, arr, title="Figure", type="-"):
-        x_points = np.array([i for i in range(len(arr))])
-        y_points = np.array(arr)
+    def plot_array(self, y, x = None, title="Figure", type="-"):
+        x_points = np.array([i for i in range(len(y))]) if x is None else np.array(x)
+        y_points = np.array(y)
 
         plt.title(title)
         plt.plot(x_points, y_points, type)

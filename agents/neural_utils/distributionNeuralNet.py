@@ -27,25 +27,15 @@ class DistributionNeuralNet(nn.Module):
         x_dims = x.size()
         batch_size = x_dims[0] if x.ndim > 1 else 0
         x = x.type(torch.float32)
-        x = torch.sigmoid(self.l1(x))
-        x = torch.sigmoid(self.l2(x))
+        x = torch.relu(self.l1(x))
+        x = torch.relu(self.l2(x))
         if self.has_fourth_layer:
-            x = torch.sigmoid(self.l3(x))
+            x = torch.relu(self.l3(x))
             x = self.l4(x)
         else:
             x = self.l3(x)
         x = torch.relu(x)
-        x = self.split_into_distributions(x, batch_size)
+        x = x.view(batch_size, self.classes, self.num_atoms) if batch_size > 0 else x.view(self.classes, self.num_atoms)
         x = torch.softmax(x, dim=1)
-        x = self.inverse_split(x, batch_size)
+        x = x.view(batch_size, self.classes * self.num_atoms) if batch_size > 0 else x.view(self.classes * self.num_atoms)
         return x
-
-    def split_into_distributions(self, x, batch_size):
-        if batch_size > 0:
-            return x.reshape(batch_size, self.classes, self.num_atoms)
-        return x.reshape(self.classes, self.num_atoms)
-
-    def inverse_split(self, x, batch_size):
-        if batch_size > 0:
-            return x.reshape(batch_size, self.classes * self.num_atoms)
-        return x.reshape(self.classes * self.num_atoms)

@@ -4,8 +4,10 @@ import math
 import os
 import random
 
+
 import numpy as np
 import torch
+from torch import nn
 
 from .Agent import Agent
 from .neural_utils.IDeepQLAgent import IDeepQLAgent
@@ -24,7 +26,7 @@ class C51(IDeepQLAgent):
         self.learning_rate = learning_rate
         self.gamma = gamma
         self.batch_size = math.floor(batch_size)
-        self.criterion = get_criterion()
+        self.criterion = nn.CrossEntropyLoss()
         self.epsilon = epsilon
         self.num_atoms = math.floor(grid_size)
         self.atom_step = ((self.GRID_MAX_VAL - self.GRID_MIN_VAL) / (self.num_atoms - 1))
@@ -76,9 +78,12 @@ class C51(IDeepQLAgent):
 
     def computeActionFromQValue(self, state):
         with torch.no_grad():
-            q_vals = self.policy_net(state)
-            distributions = q_vals.reshape(self.num_actions, self.num_atoms)
+            q_vals = self.target_net(state)
+            distributions = q_vals.view(self.num_actions, self.num_atoms)
             range_view = self.value_range.reshape(1, 1, -1)
+            if self.steps_done > 150 and True:
+                for i in range(self.num_actions):
+                    self.plotting_tools.plot_array(distributions[i], self.value_range, title="action %i" % i)
             q_means = torch.sum(distributions * range_view, dim=2)
             best_q_value = q_means.max()
             self.q_values_arr.append(best_q_value)
@@ -128,25 +133,25 @@ class C51(IDeepQLAgent):
         # Compute the target assignment
         for i in range(net_values.size(0)):
             for j in range(self.num_atoms):
-                q_target[i, 0, lower_bound[i, j]] += q_next[i, j] * (upper_bound[i, j] - next_value_position[i, j])
-                q_target[i, 0, upper_bound[i, j]] += q_next[i, j] * (next_value_position[i, j] - lower_bound[i, j])
+                q_target[i, 0, lower_bound[i, j]] += q_next_distributions[i, 0, j] * (upper_bound[i, j] - next_value_position[i, j])
+                q_target[i, 0, upper_bound[i, j]] += q_next_distributions[i, 0, j] * (next_value_position[i, j] - lower_bound[i, j])
 
         # Calc loss
-        log = -torch.log(q_distributions)
-        loss = q_target * log
-        loss = torch.mean(loss)
+        #log = -torch.log(q_distributions)
+        #loss = q_target * log
+        #loss = torch.mean(loss)
 
         # Calc importance weighted loss
-        b_w = torch.tensor(np.ones_like(reward_batch))
-        loss = torch.mean(b_w*loss)
-
+        #b_w = torch.tensor(np.ones_like(reward_batch))
+        #loss = torch.mean(b_w*loss)
+        loss = self.criterion(q_distributions, q_target)
         # backprop loss
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
 
         # Store loss
-        self.last_losses.append(loss.item())
+        self.last_losses.append(torch.mean(loss).item())
 
         # Update target network
         self.steps_done += 1
