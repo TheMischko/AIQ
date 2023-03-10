@@ -1,10 +1,10 @@
 import os
 
-iters = [100, 300, 500, 1000]
+iters = [1000, 3000, 5000, 10000, 30000, 100000]
 deepql_decay_on_10k = 300
 agent_script_strings = {
-    "DeepQL": "python AIQ.py --log -r BF -l %i -s 100 -t 6 -a DeepQL,0.00468,0.33,32,%i,64,224,176,0.25,60",
-    "Q_l": "python AIQ.py --log -r BF -l %i -s 100 -t 6 -a Q_l,0.0,0.0,0.5,0.005,0.95 %i"
+    "DeepQL": "python AIQ.py --log -r BF -l %i -s 2000 -t 6 -a DeepQL,0.00468,0.33,32,%i,64,224,176,0.25,60",
+    "Q_l": "python AIQ.py --log -r BF -l %i -s 2000 -t 6 -a Q_l,0.0,0.0,0.5,0.005,0.95 %i"
 }
 test_agents = ["DeepQL", "Q_l"]
 
