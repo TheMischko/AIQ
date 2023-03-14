@@ -180,7 +180,7 @@ def _test_agent( refm_call, agent_call, rflip, episode_length,
                 + " " + program + " " + str(rflip) + "\n" )
         mrel_debug_file.flush()
         mrel_debug_file.close()
-
+    agent.reset()
     # dispose of agent and reference machine
     agent = None
     refm  = None
