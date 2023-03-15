@@ -7,6 +7,7 @@ agents/neural_utils/genetic/logs
 log/
 meta_test.py
 test_file.txt
-meta_run_script.sh
 test_set_params.sh
 test_agents_iters.sh
+deepql_genetic.sh
+c51_genetic.sh

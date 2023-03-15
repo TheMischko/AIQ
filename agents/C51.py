@@ -18,10 +18,9 @@ from .neural_utils.replayMemory import ReplayMemory
 
 
 class C51(IDeepQLAgent):
-    GRID_MIN_VAL = -10.
-    GRID_MAX_VAL = 10.
 
-    def __init__(self, refm, disc_rate, learning_rate, gamma, batch_size, epsilon, grid_size, tau):
+    def __init__(self, refm, disc_rate, learning_rate, gamma, batch_size, epsilon, grid_size,
+                 tau, min_max_variance, neural_hidden_size):
         Agent.__init__(self, refm, disc_rate)
         self.learning_rate = learning_rate
         self.gamma = gamma
@@ -29,8 +28,10 @@ class C51(IDeepQLAgent):
         self.criterion = nn.KLDivLoss(reduction="batchmean")
         self.epsilon = epsilon
         self.num_atoms = math.floor(grid_size)
-        self.atom_step = ((self.GRID_MAX_VAL - self.GRID_MIN_VAL) / (self.num_atoms - 1))
-        self.value_range = np.linspace(self.GRID_MIN_VAL, self.GRID_MAX_VAL, self.num_atoms)
+        self.grid_min_val = -1 * float(min_max_variance)
+        self.grid_max_val = float(min_max_variance)
+        self.atom_step = ((self.grid_max_val - self.grid_min_val) / (self.num_atoms - 1))
+        self.value_range = np.linspace(self.grid_min_val, self.grid_max_val, self.num_atoms)
         self.tau = tau
 
         # Properties
@@ -52,7 +53,7 @@ class C51(IDeepQLAgent):
         # Neural net settings
         self.neural_input_size = self.state_vec_size * 2
         self.neural_output_size = self.num_actions * self.num_atoms
-        self.neural_size_hidden = 128
+        self.neural_size_hidden = int(neural_hidden_size)
 
 
         # Plotting data
@@ -103,9 +104,9 @@ class C51(IDeepQLAgent):
             # Select distributions of best actions for whole batch
             max_q_dist = target_dist[range(self.batch_size), max_q_actions]
             target_atoms = reward_batch.unsqueeze(1) * self.gamma * self.value_range
-            target_atoms = torch.clamp(target_atoms, self.GRID_MIN_VAL, self.GRID_MAX_VAL)
+            target_atoms = torch.clamp(target_atoms, self.grid_min_val, self.grid_max_val)
             # b <- (T^_z - Vmin) / delta z
-            bounds = (target_atoms - self.GRID_MIN_VAL) / self.atom_step
+            bounds = (target_atoms - self.grid_min_val) / self.atom_step
             # Lower bound of relative position l
             lower_bound = torch.floor(bounds).long()
             # Upper bound of relative position u

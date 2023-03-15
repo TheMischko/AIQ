@@ -2,17 +2,20 @@ import os
 import sys
 import argparse
 
+from agents.neural_utils.genetic import deepql_weight_scoring
+from agents.neural_utils.genetic import c51_weight_scoring
+from agents.neural_utils.genetic.c51_weight_generator import C51WeightGenerator
+
 sys.path.append(os.getcwd().split("AIQ")[0] + "AIQ")
 
 from agents.neural_utils.genetic.Environment import Environment
 from agents.neural_utils.genetic.deepql_weight_generator import DeepQLWeightGenerator
-from agents.neural_utils.genetic.deepql_weight_scoring import eval_weights
 
 
 
-def print_header(pop_size, num_select, epochs, iterations, samples, agents, threads):
+def print_header(agent_type, pop_size, num_select, epochs, iterations, samples, agents, threads):
     print("-----------------------------------------------------------------------")
-    print("-------Starting Genetic algorithm for finding best DeepQL setup--------")
+    print("-------Starting Genetic algorithm for finding best %s setup--------" % agent_type)
     print("-----------------------------------------------------------------------")
     print("Parameters:")
     print("   Population size: %d" % pop_size)
@@ -34,6 +37,7 @@ if __name__ == '__main__':
     argParser.add_argument("-s", "--samples", help="Number of samples for AIQ test.")
     argParser.add_argument("-a", "--agents", help="Set how many agents will be run at single time.")
     argParser.add_argument("-t", "--threads", help="Set how many threads will be used for single agents in AIQ test.")
+    argParser.add_argument("-x", "--agent_type", help="Set a name of the agent for testing. (Values are DeepQL or C51)")
     args = argParser.parse_args()
 
     pop_size = int(args.pop_size or 10)
@@ -43,17 +47,23 @@ if __name__ == '__main__':
     samples = int(args.samples or 100)
     agents = int(args.agents or 2)
     threads = int(args.threads or 2)
+    agent_type = args.agent_type
 
-    gen_env = Environment(DeepQLWeightGenerator(), eval_weights, pop_size, num_select, epochs, agents, scoring_params={
+    param_generator = None
+    eval_weights = None
+    if agent_type == "C51":
+        param_generator = C51WeightGenerator
+        eval_weights = c51_weight_scoring.eval_weights
+    else:
+        param_generator = DeepQLWeightGenerator
+        eval_weights = deepql_weight_scoring.eval_weights
+
+    gen_env = Environment(param_generator(), eval_weights, pop_size, num_select, epochs, agents, scoring_params={
         "iterations": iterations,
         "samples": samples,
         "threads": threads
-    }, seed_genomes=[
-        [0.00298, 0.19, 32, 300, 64, 96, 176, 0.25, 60],
-        [0.00468, 0.33, 32, 300, 64, 224, 176, 0.25, 60],
-        [0.00327, 0.4, 32, 600, 128, 224, 176, 0.25, 60]
-    ])
-    print_header(pop_size, num_select, epochs, iterations, samples, agents, threads)
+    })
+    print_header(agent_type, pop_size, num_select, epochs, iterations, samples, agents, threads)
     result = gen_env.simulate(log=True)
     print()
     print("Best found individual is %s with value %5.2f" % (result, result.eval()))
