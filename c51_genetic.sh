@@ -1,7 +1,7 @@
 #!/bin/bash
 #PBS -N C51_Genetic_Alg
 #PBS -l select=1:ncpus=24:mem=32gb:scratch_local=1gb
-#PBS -l walltime=01:00:00
+#PBS -l walltime=1:00:00
 #PBS -m ae
 
 DATADIR=/auto/vestec1-elixir/home/dvom24
@@ -26,16 +26,18 @@ cd $SCRATCHDIR
 
 git clone https://github.com/TheMischko/AIQ.git || { echo >&2 "Error while copying git repository!"; exit 2; }
 
-echo "Git repository was successfully cloned." >> $DATADIR/genetic_output.txt
+echo "Git repository was successfully cloned." >> $DATADIR/c51_genetic_output.txt
 
 cd AIQ/agents/neural_utils/genetic
 mkdir "logs"
 
-echo "Starting python script." >> $DATADIR/genetic_output.txt
+echo "Starting python script." >> $DATADIR/c51_genetic_output.txt
 
-python test_genetic.py -p 4 -n 2 -e 2 -i 100 -s 100 -a 4 -t 7 --agent_type C51 >> $DATADIR/genetic_output.txt 2> $DATADIR/error.txt
+python test_genetic.py -p 3 -n 2 -e 2 -i 100 -s 100 -a 2 -t 8 --agent_type C51 >> $DATADIR/c51_genetic_output.txt 2> $DATADIR/c51_genetic_error.txt
 
-cp -r "logs/" $DATADIR/ 2> $DATADIR/error.txt || { echo >&2 "Result file(s) copying failed (with a code $?) !!"; exit 4; }
+echo "Script finished." >> $DATADIR/c51_genetic_output.txt
+
+cp -r "logs/" $DATADIR/ 2> $DATADIR/c51_genetic_error.txt || { echo >&2 "Result file(s) copying failed (with a code $?) !!"; exit 4; }
 
 # clean the SCRATCH directory
 clean_scratch
