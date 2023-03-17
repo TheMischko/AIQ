@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import time
 
 sys.path.append(os.getcwd().split("AIQ")[0] + "AIQ")
 
@@ -37,6 +38,7 @@ if __name__ == '__main__':
     argParser.add_argument("-a", "--agents", help="Set how many agents will be run at single time.")
     argParser.add_argument("-t", "--threads", help="Set how many threads will be used for single agents in AIQ test.")
     argParser.add_argument("-x", "--agent_type", help="Set a name of the agent for testing. (Values are DeepQL or C51)")
+    argParser.add_argument("-d", "--debug", help="Turns on the debug messages to print", action="store_true")
     args = argParser.parse_args()
 
     pop_size = int(args.pop_size or 10)
@@ -47,6 +49,7 @@ if __name__ == '__main__':
     agents = int(args.agents or 2)
     threads = int(args.threads or 2)
     agent_type = args.agent_type
+    debug = args.debug
 
     param_generator = None
     eval_weights = None
@@ -62,8 +65,9 @@ if __name__ == '__main__':
         "samples": samples,
         "threads": threads
     })
+
     print_header(agent_type, pop_size, num_select, epochs, iterations, samples, agents, threads)
-    result = gen_env.simulate(log=True)
+    result = gen_env.simulate(log=True, debug=True)
     print()
     print("Best found individual is %s with value %5.2f" % (result, result.eval()))
     print()

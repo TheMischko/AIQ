@@ -1,12 +1,12 @@
 #!/bin/bash
 #PBS -N C51_Genetic_Alg
 #PBS -l select=1:ncpus=24:mem=32gb:scratch_local=1gb
-#PBS -l walltime=1:00:00
+#PBS -l walltime=95:59:00
 #PBS -m ae
 
 DATADIR=/auto/vestec1-elixir/home/dvom24
 
-echo "$PBS_JOBID is running on node `hostname -f` in a scratch directory $SCRATCHDIR" >> $DATADIR/genetic_output.txt
+echo "$PBS_JOBID is running on node `hostname -f` in a scratch directory $SCRATCHDIR" >> $DATADIR/c51_genetic_output.txt
 
 module add python
 module add python36-modules-gcc
@@ -33,7 +33,7 @@ mkdir "logs"
 
 echo "Starting python script." >> $DATADIR/c51_genetic_output.txt
 
-python test_genetic.py -p 3 -n 2 -e 2 -i 100 -s 100 -a 2 -t 8 --agent_type C51 >> $DATADIR/c51_genetic_output.txt 2> $DATADIR/c51_genetic_error.txt
+python test_genetic.py -p 12 -n 4 -e 10 -i 2000 -s 1000 -a 4 -t 7 --agent_type C51 >> $DATADIR/c51_genetic_output.txt 2> $DATADIR/c51_genetic_error.txt
 
 echo "Script finished." >> $DATADIR/c51_genetic_output.txt
 
