@@ -7,6 +7,7 @@ import time
 import numpy as np
 import multiprocessing as mp
 
+from agents.neural_utils.genetic.EvalProcess import EvalProcess
 from agents.neural_utils.genetic.Individual import Individual
 from agents.neural_utils.genetic.IGenomeGenerator import IGenomeGenerator
 
@@ -45,28 +46,34 @@ class Environment:
         self.starting_time = time.time()
         self.debug = debug
 
+        # Create population
         if self.seed_genomes is None:
             self.debug_print("Creating new population.")
             population = self.create_population(self.pop_size)
         else:
             self.debug_print("Creating new population with seeded individuals.")
             population = self.create_seeded_population(self.seed_genomes)
+
+        # Main Loop
         best_individuals = None
         for i in range(self.iterations):
             self.debug_print("Starting iteration %d." % (i+1))
             start_time = time.time()
             self.debug_print("Starting population evaluation.")
-            scores = self.evalute_population(population)
+            population, scores = self.evaluate_population(population)
+
             self.debug_print("Selecting best individuals.")
             best_indices = self.select_best_individuals(scores)
             best_individuals = [population[j] for j in best_indices]
             if log:
                 self.debug_print("Logging best individuals.")
                 self.log_results(population, i, start_time, willPrint=False, saveLog=True)
+
             # Add best to new generation
             population.clear()
             population.extend(best_individuals)
             self.debug_print("Mutating best genomes to create new ones.")
+
             # Mutate best found genomes
             for j in range(self.num_mutations):
                 genome_to_mutate = random.randint(0, len(best_individuals)-1)
@@ -80,6 +87,7 @@ class Environment:
                     )
                 )
             self.debug_print("Applying crossover.")
+
             # Create children from best found genomes
             for j in range(self.num_crossover):
                 genome1_to_mutate = random.randint(0, len(best_individuals)-1)
@@ -112,21 +120,47 @@ class Environment:
             population.append(Individual(genome, self.scoring_function, self.scoring_params))
         return population
 
-    def evalute_population(self, population):
+    def evaluate_population(self, population):
         allowed_threads = self.num_sim_agents
-        pool = mp.Pool(allowed_threads)
+        # Tells how many there will be allowed_threads-times threads running
         iterations = math.floor(self.pop_size / allowed_threads)
-        values = list()
+
+        population_queue = mp.Queue()
+        evaluated_queue = mp.Queue()
+
+        # Fill queue
+        for individual in population:
+            population_queue.put(individual)
+
         for i in range(iterations):
             self.debug_print("Evaluating genomes %d-%d." % ((i*allowed_threads), (i*allowed_threads)+allowed_threads-1))
-            results = pool.map(evaluate_individual, [population[(i*allowed_threads) + index] for index in range(allowed_threads)])
-            values.extend(results)
+            processes = list()
+            for t in range(allowed_threads):
+                processes.append(EvalProcess(evaluated_queue, population_queue))
+            for process in processes:
+                process.start()
+            for process in processes:
+                process.join()
+
+        # Evaluate rest of the genomes
         self.debug_print("Evaluating rest of the genomes.")
-        results = pool.map(evaluate_individual, [population[index + (allowed_threads * iterations)] for index in
-                                                 range(self.pop_size % allowed_threads)])
-        values.extend(results)
-        pool.close()
-        return np.array(values, dtype=np.float)
+        processes = list()
+        num_rest = self.pop_size - (iterations * allowed_threads)
+        for t in range(num_rest):
+            processes.append(EvalProcess(evaluated_queue, population_queue))
+        for process in processes:
+            process.start()
+        for process in processes:
+            process.join()
+
+        pop = list()
+        values = list()
+        for i in range(self.pop_size):
+            individual = evaluated_queue.get()
+            pop.append(individual)
+            values.append(individual.eval())
+
+        return pop, values
 
     def select_best_individuals(self, scores):
         partition = np.argpartition(scores, -self.num_select_best)
@@ -194,7 +228,3 @@ class Environment:
             return
         time_from_start = time.time() - self.starting_time
         print("[%s]   %s" % (self.parse_time_to_str(time_from_start), msg))
-
-
-def evaluate_individual(individual):
-    return individual.eval()

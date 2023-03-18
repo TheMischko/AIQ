@@ -7,13 +7,15 @@ class Individual:
 
     def eval(self):
         if self.value is None:
-            self.value = self.eval_fnc(self.genome, self.eval_params)
+            value = self.eval_fnc(self.genome, self.eval_params)
+            self.value = value
             return self.value
         else:
             return self.value
 
     def change_genome(self, new_genome):
         self.genome = new_genome
+        self.value = None
 
     def get_genome(self):
         return self.genome
