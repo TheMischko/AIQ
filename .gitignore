@@ -11,3 +11,4 @@ test_set_params.sh
 test_agents_iters.sh
 deepql_genetic.sh
 c51_genetic.sh
+test_deepql.sh

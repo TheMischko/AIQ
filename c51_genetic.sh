@@ -1,6 +1,6 @@
 #!/bin/bash
 #PBS -N C51_Genetic_Alg
-#PBS -l select=1:ncpus=24:mem=32gb:scratch_local=1gb
+#PBS -l select=1:ncpus=24:mem=16gb:scratch_local=1gb
 #PBS -l walltime=95:59:00
 #PBS -m ae
 
@@ -33,7 +33,7 @@ mkdir "logs"
 
 echo "Starting python script." >> $DATADIR/c51_genetic_output.txt
 
-python test_genetic.py -p 12 -n 4 -e 10 -i 2000 -s 1000 -a 4 -t 7 --agent_type C51 >> $DATADIR/c51_genetic_output.txt 2> $DATADIR/c51_genetic_error.txt
+python test_genetic.py -p 10 -n 4 -e 10 -i 2000 -s 750 -a 4 -t 8 --agent_type C51 --debug >> $DATADIR/c51_genetic_output.txt 2> $DATADIR/c51_genetic_error.txt
 
 echo "Script finished." >> $DATADIR/c51_genetic_output.txt
 

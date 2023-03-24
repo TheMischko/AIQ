@@ -16,7 +16,7 @@ from agents.neural_utils.plottingTools import PlottingTools
 
 class IDeepQLAgent(Agent):
     START_EPSILON = 1.0
-    MIN_EPSILON = 0
+    MIN_EPSILON = 0.01
     REWARD_DIVIDER = 100
     PLOT_Q_VALUES = False
     PLOT_LOSS = True
