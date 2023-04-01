@@ -5,6 +5,7 @@ agents/__pycache__
 refmachines/__pycache__
 agents/deep_ql/neural_utils/genetic/logs
 log/
+log-el/
 meta_test.py
 test_file.txt
 test_set_params.sh

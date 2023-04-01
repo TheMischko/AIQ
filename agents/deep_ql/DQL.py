@@ -13,7 +13,7 @@ class DQL(DQL_Decay):
         return
 
     def __str__(self):
-        return "DQL(%.3f,%.2f,%d,%.3f,%d,%d,%d)" % (
+        return "DQL(%.4f,%.2f,%d,%.3f,%d,%d,%d)" % (
             self.learning_rate,
             self.gamma,
             self.batch_size,

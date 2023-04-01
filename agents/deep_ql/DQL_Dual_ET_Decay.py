@@ -17,7 +17,8 @@ class DQL_Dual_ET_Decay(DQL_Dual_Decay):
 
     def __init__(self, refm, disc_rate, learning_rate, gamma, batch_size, epsilon_decay_length, neural_size_l1,
                  neural_size_l2, neural_size_l3, tau, update_interval_length, lambda_val, traces_method):
-        super().__init__(refm, disc_rate, learning_rate, gamma, batch_size, epsilon_decay_length, neural_size_l1, neural_size_l2, neural_size_l3, tau, update_interval_length)
+        super().__init__(refm, disc_rate, learning_rate, gamma, batch_size, epsilon_decay_length, neural_size_l1,
+                         neural_size_l2, neural_size_l3, tau, update_interval_length)
         self.eligibility = torch.zeros((self.batch_size, self.num_actions))
         self.lambda_val = lambda_val
         self.trace_method = self.TRACES_METHODS[int(traces_method)]
