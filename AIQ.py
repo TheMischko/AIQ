@@ -146,7 +146,6 @@ def _test_agent( refm_call, agent_call, rflip, episode_length,
         if config["multi_rounding_el"] and not mrel_stop:
             mrel_stop, converged_reward = evaluate_mrel_stopping_condition( disc_rewards, i, config )
             config["mrel_rewards"].append( disc_reward )
-        agent.episode_ended()
 
     if (config["agent_symbol_debug"]):
         with open(config["agent_symbol_debug_files"]["symbols"],"a") as symbols:
@@ -180,6 +179,7 @@ def _test_agent( refm_call, agent_call, rflip, episode_length,
                 + " " + program + " " + str(rflip) + "\n" )
         mrel_debug_file.flush()
         mrel_debug_file.close()
+    agent.episode_ended()
     agent.reset()
     # dispose of agent and reference machine
     agent = None

@@ -33,7 +33,7 @@ mkdir "logs"
 
 echo "Starting python script." >> $DATADIR/c51_genetic_output.txt
 
-python test_genetic.py -p 10 -n 4 -e 10 -i 2000 -s 750 -a 4 -t 8 --agent_type C51 --debug >> $DATADIR/c51_genetic_output.txt 2> $DATADIR/c51_genetic_error.txt
+python test_genetic.py -p 4 -n 4 -e 10 -i 2000 -s 500 -a 2 -t 12 --agent_type C51 --debug >> $DATADIR/c51_genetic_output.txt 2> $DATADIR/c51_genetic_error.txt
 
 echo "Script finished." >> $DATADIR/c51_genetic_output.txt
 

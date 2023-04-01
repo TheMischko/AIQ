@@ -39,5 +39,5 @@ def get_optimizer(model, learning_rate=0.0025):
     #return torch.optim.AdamW(model.parameters(), learning_rate, amsgrad=True)
 
 
-def get_criterion():
-    return nn.SmoothL1Loss()
+def get_criterion(reduction = 'mean'):
+    return nn.SmoothL1Loss(reduction=reduction)

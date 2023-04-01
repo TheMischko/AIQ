@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import atexit
+from scipy.signal import savgol_filter
 
 
 def normalized(a, axis=-1, order=2):
@@ -23,6 +23,9 @@ def singleton(class_):
 class PlottingTools(object):
     NUM_AVERAGE_OVER_INPUTS = 5
 
+    COLORS = ['red', 'blue', 'green', 'orange', 'purple', 'yellow', 'brown', 'pink', 'gray', 'black']
+
+
     def __init__(self):
         self.average_arrs = list()
 
@@ -44,3 +47,17 @@ class PlottingTools(object):
         plt.title(title)
         plt.plot(x_points, y_points, type)
         plt.show()
+
+    def plot_multiple_array(self, arrays, title="Figure", type="-"):
+        x_points = np.array([i for i in range(len(arrays[0]))])
+        if len(x_points) < 20:
+            return
+        fig, axes = plt.subplots(nrows=len(arrays), ncols=1, figsize=(12, 8))
+
+        for i, arr in enumerate(arrays):
+            smoothen_vals = savgol_filter(np.array(arr), window_length=11, polyorder=2)
+            axes[i].plot(x_points, smoothen_vals, color=self.COLORS[i], linestyle=type)
+
+        #plt.tight_layout()
+        plt.show()
+
