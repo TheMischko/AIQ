@@ -5,7 +5,7 @@ import time
 import numpy as np
 import multiprocessing as mp
 
-from agents.neural_utils.genetic.EvalProcess import EvalProcess
+from agents.deep_ql.neural_utils.genetic.EvalProcess import EvalProcess
 from agents.deep_ql.neural_utils.genetic.Individual import Individual
 
 import datetime
@@ -218,7 +218,8 @@ class Environment:
         return population
 
     def parse_time_to_str(self, time_val):
-        return "%02d:%02d:%02d" % (math.floor(time_val / 3600), math.floor(time_val / 60), time_val % 60)
+        hours = math.floor(time_val / 3600)
+        return "%02d:%02d:%02d" % (math.floor(time_val / 3600), math.floor((time_val % 3600) / 60), (time_val % 3600) % 60)
 
     def debug_print(self, msg):
         if not self.debug:

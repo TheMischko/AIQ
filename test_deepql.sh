@@ -31,15 +31,10 @@ mkdir -p "log-el"
 
 # run script
 echo "Starting python script." >> $DATADIR/DeepQL_test_output.txt
-python AIQ.py --log --verbose_log_el -r BF -l 3000 -s 100 -t 8 -a DeepQL,0.00468,0.33,32,3000,64,224,176,0.25,60 >> $DATADIR/DeepQL_test_output.txt 2> $DATADIR/DeepQL_test_error.txt
+python AIQ.py --log --verbose_log_el -r BF -l 3000 -s 100 -t 8 -a DQL_Dual_Decay,0.00468,0.33,32,3000,64,224,176,0.25,60 >> $DATADIR/DeepQL_test_output.txt 2> $DATADIR/DeepQL_test_error.txt
 echo "Script finished." >> $DATADIR/DeepQL_test_output.txt
 
 # copy output files to DATADIR
-ls >> $DATADIR/DeepQL_test_output.txt
-echo "Entering log-el folder." >> $DATADIR/DeepQL_test_output.txt
-cd log-el/
-ls >> $DATADIR/DeepQL_test_output.txt
-cd ..
 cp -r "log/" $DATADIR 2> $DATADIR/DeepQL_test_error.txt || { echo >&2 "Log file(s) copying failed (with a code $?) !!"; exit 4; }
 cp -r "log-el/" $DATADIR 2> $DATADIR/DeepQL_test_error.txt || { echo >&2 "Log-el file(s) copying failed (with a code $?) !!"; exit 5; }
 

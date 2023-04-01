@@ -5,10 +5,11 @@ import argparse
 sys.path.append(os.getcwd().split("AIQ")[0] + "AIQ")
 
 from agents.deep_ql.neural_utils.genetic.Environment import Environment
-from agents.neural_utils.genetic.deepql_weight_generator import DeepQLWeightGenerator
-from agents.neural_utils.genetic import deepql_weight_scoring
-from agents.neural_utils.genetic import c51_weight_scoring
-from agents.neural_utils.genetic.c51_weight_generator import C51WeightGenerator
+from agents.deep_ql.neural_utils.genetic.deepql_weight_generator import DeepQLWeightGenerator
+from agents.deep_ql.neural_utils.genetic import deepql_weight_scoring, dql_el_scoring
+from agents.deep_ql.neural_utils.genetic import c51_weight_scoring
+from agents.deep_ql.neural_utils.genetic.c51_weight_generator import C51WeightGenerator
+from agents.deep_ql.neural_utils.genetic.dql_el_generator import DQlElGenerator
 
 
 
@@ -53,13 +54,16 @@ if __name__ == '__main__':
     param_generator = None
     eval_weights = None
     if agent_type == "C51":
-        param_generator = C51WeightGenerator
+        param_generator = C51WeightGenerator()
         eval_weights = c51_weight_scoring.eval_weights
+    elif agent_type == "DQL_EL":
+        param_generator = DQlElGenerator()
+        eval_weights = dql_el_scoring.eval_weights
     else:
-        param_generator = DeepQLWeightGenerator
+        param_generator = DeepQLWeightGenerator()
         eval_weights = deepql_weight_scoring.eval_weights
 
-    gen_env = Environment(param_generator(), eval_weights, pop_size, num_select, epochs, agents, scoring_params={
+    gen_env = Environment(param_generator, eval_weights, pop_size, num_select, epochs, agents, scoring_params={
         "iterations": iterations,
         "samples": samples,
         "threads": threads
