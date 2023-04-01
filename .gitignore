@@ -3,7 +3,7 @@
 __pycache__
 agents/__pycache__
 refmachines/__pycache__
-agents/neural_utils/genetic/logs
+agents/deep_ql/neural_utils/genetic/logs
 log/
 meta_test.py
 test_file.txt

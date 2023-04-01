@@ -10,11 +10,11 @@ import torch
 from torch import nn
 
 from .Agent import Agent
-from .neural_utils.IDeepQLAgent import IDeepQLAgent
-from .neural_utils.neuralNet import get_optimizer, get_criterion
-from .neural_utils.plottingTools import PlottingTools
-from .neural_utils.distributionNeuralNet import DistributionNeuralNet
-from .neural_utils.replayMemory import ReplayMemory
+from .deep_ql.neural_utils.IDeepQLAgent import IDeepQLAgent
+from .deep_ql.neural_utils.neuralNet import get_optimizer, get_criterion
+from agents.deep_ql.neural_utils.plottingTools import PlottingTools
+from .deep_ql.neural_utils.distributionNeuralNet import DistributionNeuralNet
+from .deep_ql.neural_utils.replayMemory import ReplayMemory
 
 
 class C51(IDeepQLAgent):

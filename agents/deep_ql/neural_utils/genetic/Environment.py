@@ -1,5 +1,3 @@
-
-import copy
 import math
 import random
 import time
@@ -8,8 +6,7 @@ import numpy as np
 import multiprocessing as mp
 
 from agents.neural_utils.genetic.EvalProcess import EvalProcess
-from agents.neural_utils.genetic.Individual import Individual
-from agents.neural_utils.genetic.IGenomeGenerator import IGenomeGenerator
+from agents.deep_ql.neural_utils.genetic.Individual import Individual
 
 import datetime
 

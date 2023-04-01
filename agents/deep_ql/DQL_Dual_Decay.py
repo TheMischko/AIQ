@@ -4,24 +4,14 @@
 # Copyright Shane Legg 2011
 # Released under GNU GPLv3
 #
-import math
-import random
-import numpy as np
 import torch
 
-import binascii
-import os
-
-from .Agent import Agent
-from agents.neural_utils.IDeepQLAgent import IDeepQLAgent
-from agents.neural_utils.neuralNet import NeuralNet
-from agents.neural_utils.neuralNet import get_optimizer
-from agents.neural_utils.neuralNet import get_criterion
-from agents.neural_utils.replayMemory import ReplayMemory, Transition
-from agents.neural_utils.plottingTools import PlottingTools
+from agents.deep_ql.neural_utils.IDeepQLAgent import IDeepQLAgent
+from agents.deep_ql.neural_utils.neuralNet import NeuralNet
+from agents.deep_ql.neural_utils.neuralNet import get_optimizer
 
 
-class DeepQL(IDeepQLAgent):
+class DQL_Dual_Decay(IDeepQLAgent):
     def __init__(self, refm, disc_rate, learning_rate, gamma, batch_size, epsilon_decay_length, neural_size_l1,
                  neural_size_l2, neural_size_l3, tau, update_interval_length):
         IDeepQLAgent.__init__(self, refm, disc_rate, learning_rate, gamma, batch_size, epsilon_decay_length,
@@ -81,14 +71,14 @@ class DeepQL(IDeepQLAgent):
             self.target_net.load_state_dict(target_net_state_dict)
 
     def __str__(self):
-        return "Dualnet DeepQL(%f,%f,%d,%d,%f,%d, neural net %dx%dx%d)" % (
+        return "DQL_Dual_Decay(%.4f,%.2f,%d,%d,%d,%d,%d,%.2f,%d)" % (
             self.learning_rate,
             self.gamma,
             self.batch_size,
             self.episodes_till_min_decay,
-            self.tau,
-            self.update_interval_length,
             self.neural_size_l1,
             self.neural_size_l2,
-            self.neural_size_l3
+            self.neural_size_l3,
+            self.tau,
+            self.update_interval_length,
         )

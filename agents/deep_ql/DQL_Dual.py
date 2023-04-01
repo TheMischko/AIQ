@@ -13,15 +13,15 @@ import binascii
 import os
 
 from agents.Agent import Agent
-from agents.neural_utils.IDeepQLAgent import IDeepQLAgent
-from agents.neural_utils.neuralNet import NeuralNet
-from agents.neural_utils.neuralNet import get_optimizer
-from agents.neural_utils.neuralNet import get_criterion
-from agents.neural_utils.replayMemory import ReplayMemory, Transition
-from agents.neural_utils.plottingTools import PlottingTools
+from agents.deep_ql.neural_utils.IDeepQLAgent import IDeepQLAgent
+from agents.deep_ql.neural_utils.neuralNet import NeuralNet
+from agents.deep_ql.neural_utils.neuralNet import get_optimizer
+from agents.deep_ql.neural_utils.neuralNet import get_criterion
+from agents.deep_ql.neural_utils.replayMemory import ReplayMemory, Transition
+from agents.deep_ql.neural_utils.plottingTools import PlottingTools
 
 
-class DeepQLNoDecay(IDeepQLAgent):
+class DQL_Dual(IDeepQLAgent):
     def __init__(self, refm, disc_rate, learning_rate, gamma, batch_size, epsilon, neural_size_l1,
                  neural_size_l2, neural_size_l3, tau, update_interval_length):
         IDeepQLAgent.__init__(self, refm, disc_rate, learning_rate, gamma, batch_size, 0,
@@ -83,9 +83,14 @@ class DeepQLNoDecay(IDeepQLAgent):
             self.target_net.load_state_dict(target_net_state_dict)
 
     def __str__(self):
-        gamma_string = str(self.gamma)
-        gamma_string = gamma_string.replace(".", "_")
-
-        epsilon_string = str(self.epsilon)
-        epsilon_string = epsilon_string.replace(".", "_")
-        return "DeepQL-gamma-%s-epsilon-%s" % (gamma_string, epsilon_string)
+        return "DQL_Dual(%.4f,%.2f,%d,%.3f,%d,%d,%d,%.2f,%d)" % (
+            self.learning_rate,
+            self.gamma,
+            self.batch_size,
+            self.epsilon,
+            self.neural_size_l1,
+            self.neural_size_l2,
+            self.neural_size_l3,
+            self.tau,
+            self.update_interval_length
+        )

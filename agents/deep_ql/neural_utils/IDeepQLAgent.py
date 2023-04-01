@@ -6,12 +6,12 @@ import torch
 import binascii
 import os
 
-from ..Agent import Agent
-from agents.neural_utils.neuralNet import NeuralNet
-from agents.neural_utils.neuralNet import get_optimizer
-from agents.neural_utils.neuralNet import get_criterion
-from agents.neural_utils.replayMemory import ReplayMemory, Transition
-from agents.neural_utils.plottingTools import PlottingTools
+from agents.Agent import Agent
+from agents.deep_ql.neural_utils.neuralNet import NeuralNet
+from agents.deep_ql.neural_utils.neuralNet import get_optimizer
+from agents.deep_ql.neural_utils.neuralNet import get_criterion
+from agents.deep_ql.neural_utils.replayMemory import ReplayMemory, Transition
+from agents.deep_ql.neural_utils.plottingTools import PlottingTools
 
 
 class IDeepQLAgent(Agent):

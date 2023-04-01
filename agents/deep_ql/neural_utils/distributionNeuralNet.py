@@ -1,8 +1,6 @@
 import torch
 from torch import nn
 
-from agents.neural_utils.neuralNet import NeuralNet
-
 
 class DistributionNeuralNet(nn.Module):
     def __init__(self, input_size, num_classes, num_atoms, hidden_size):

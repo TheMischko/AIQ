@@ -4,7 +4,7 @@ import torch
 from agents.deep_ql.neural_utils.IDeepQLAgent import IDeepQLAgent
 
 
-class DQL(IDeepQLAgent):
+class DQL_Decay(IDeepQLAgent):
     def learn_from_experience(self):
         if len(self.memory) < self.batch_size:
             return
@@ -36,4 +36,12 @@ class DQL(IDeepQLAgent):
         self.decrement_epsilon()
 
     def __str__(self):
-        return "Vanilla DeepQL"
+        return "DQL_Decay(%.4f,%.2f,%d,%d,%d,%d,%d)" % (
+            self.learning_rate,
+            self.gamma,
+            self.batch_size,
+            self.episodes_till_min_decay,
+            self.neural_size_l1,
+            self.neural_size_l2,
+            self.neural_size_l3
+        )

@@ -1,11 +1,10 @@
 import os
 import sys
 import argparse
-import time
 
 sys.path.append(os.getcwd().split("AIQ")[0] + "AIQ")
 
-from agents.neural_utils.genetic.Environment import Environment
+from agents.deep_ql.neural_utils.genetic.Environment import Environment
 from agents.neural_utils.genetic.deepql_weight_generator import DeepQLWeightGenerator
 from agents.neural_utils.genetic import deepql_weight_scoring
 from agents.neural_utils.genetic import c51_weight_scoring

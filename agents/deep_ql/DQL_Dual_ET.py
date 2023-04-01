@@ -2,24 +2,29 @@ import math
 
 import torch
 
-from agents.DeepQL import DeepQL
-from agents.neural_utils import traces
-from agents.neural_utils.neuralNet import get_criterion, NeuralNet, get_optimizer
+from agents.deep_ql.DQL_Dual_Decay import DQL_Dual_Decay
+from agents.deep_ql.neural_utils import traces
+from agents.deep_ql.neural_utils.neuralNet import get_criterion
 
 
-class DeepQLambda(DeepQL):
+class DQL_Dual_ET(DQL_Dual_Decay):
+
+    TRACES_METHODS = [
+        "replacing",
+        "accumulating",
+        "dutch"
+    ]
     def __init__(self, refm, disc_rate, learning_rate, gamma, batch_size, epsilon_decay_length, neural_size_l1,
-                 neural_size_l2, neural_size_l3, tau, update_interval_length, lambda_val):
-        super(DeepQLambda, self).__init__(refm, disc_rate, learning_rate, gamma, batch_size, epsilon_decay_length,
-                                          neural_size_l1, neural_size_l2, neural_size_l3, tau, update_interval_length)
+                 neural_size_l2, neural_size_l3, tau, update_interval_length, lambda_val, traces_method):
+        super().__init__(refm, disc_rate, learning_rate, gamma, batch_size, epsilon_decay_length, neural_size_l1, neural_size_l2, neural_size_l3, tau, update_interval_length)
         self.eligibility = torch.zeros((self.batch_size, self.num_actions))
         self.lambda_val = lambda_val
-        self.trace_method = "dutch"
+        self.trace_method = self.TRACES_METHODS[int(traces_method)]
         self.action_q_values = [[] for i in range(self.num_actions)]
         self.criterion = get_criterion(reduction='none')
 
     def reset(self):
-        super(DeepQLambda, self).reset()
+        super().reset()
         self.eligibility = torch.zeros(self.state_vec_size, self.state_vec_size, self.num_actions)
 
     def learn_from_experience(self):
@@ -80,6 +85,21 @@ class DeepQLambda(DeepQL):
     def episode_ended(self):
         self.plotting_tools.plot_array(y=self.last_losses, title="Loss")
         self.plotting_tools.plot_multiple_array(self.action_q_values, title="Q-values")
+
+    def __str__(self):
+        return "DQL_Dual_Decay(%.4f,%.2f,%d,%d,%d,%d,%d,%.2f,%d,%.2f,%s)" % (
+            self.learning_rate,
+            self.gamma,
+            self.batch_size,
+            self.episodes_till_min_decay,
+            self.neural_size_l1,
+            self.neural_size_l2,
+            self.neural_size_l3,
+            self.tau,
+            self.update_interval_length,
+            self.lambda_val,
+            self.trace_method
+        )
 
 
 

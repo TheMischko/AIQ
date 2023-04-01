@@ -1,7 +1,5 @@
 from multiprocessing import Process, Queue
 
-from agents.neural_utils.genetic.Individual import Individual
-
 
 class EvalProcess(Process):
     def __init__(self, queue: Queue, individual_queue: Queue):

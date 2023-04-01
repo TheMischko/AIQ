@@ -1,6 +1,6 @@
 import random
 
-from agents.neural_utils.genetic.IGenomeGenerator import IGenomeGenerator
+from agents.deep_ql.neural_utils.genetic.IGenomeGenerator import IGenomeGenerator
 
 
 class DeepQLWeightGenerator(IGenomeGenerator):
