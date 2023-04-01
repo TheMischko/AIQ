@@ -1,7 +1,7 @@
 #!/bin/bash
 #PBS -N DeepQL_100k
 #PBS -l select=1:ncpus=8:mem=12gb:scratch_local=1gb
-#PBS -l walltime=23:59:00
+#PBS -l walltime=00:59:00
 
 DATADIR=/auto/vestec1-elixir/home/dvom24
 
@@ -31,12 +31,17 @@ mkdir -p "log-el"
 
 # run script
 echo "Starting python script." >> $DATADIR/DeepQL_test_output.txt
-python AIQ.py --log --verbose_log_el -r BF -l 100000 -s 10000 -t 8 -a DeepQL,0.00468,0.33,32,3000,64,224,176,0.25,60 >> $DATADIR/DeepQL_test_output.txt 2> $DATADIR/DeepQL_test_error.txt
+python AIQ.py --log --verbose_log_el -r BF -l 3000 -s 100 -t 8 -a DeepQL,0.00468,0.33,32,3000,64,224,176,0.25,60 >> $DATADIR/DeepQL_test_output.txt 2> $DATADIR/DeepQL_test_error.txt
 echo "Script finished." >> $DATADIR/DeepQL_test_output.txt
 
 # copy output files to DATADIR
-cp -r "log/*" $DATADIR/log 2> $DATADIR/DeepQL_test_error.txt || { echo >&2 "Log file(s) copying failed (with a code $?) !!"; exit 4; }
-cp -r "log-el/*" $DATADIR/log-el 2> $DATADIR/DeepQL_test_error.txt || { echo >&2 "Log-el file(s) copying failed (with a code $?) !!"; exit 5; }
+ls >> $DATADIR/DeepQL_test_output.txt
+echo "Entering log-el folder." >> $DATADIR/DeepQL_test_output.txt
+cd log-el/
+ls >> $DATADIR/DeepQL_test_output.txt
+cd ..
+cp -r "log/" $DATADIR 2> $DATADIR/DeepQL_test_error.txt || { echo >&2 "Log file(s) copying failed (with a code $?) !!"; exit 4; }
+cp -r "log-el/" $DATADIR 2> $DATADIR/DeepQL_test_error.txt || { echo >&2 "Log-el file(s) copying failed (with a code $?) !!"; exit 5; }
 
 # clean the SCRATCH directory
 clean_scratch
