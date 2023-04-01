@@ -1,10 +1,10 @@
 import numpy as np
 import torch
 
-from agents.neural_utils.IDeepQLAgent import IDeepQLAgent
+from agents.deep_ql.neural_utils.IDeepQLAgent import IDeepQLAgent
 
 
-class VanillaDeepQL(IDeepQLAgent):
+class DQL(IDeepQLAgent):
     def learn_from_experience(self):
         if len(self.memory) < self.batch_size:
             return

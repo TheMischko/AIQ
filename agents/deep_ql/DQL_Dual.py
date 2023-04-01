@@ -12,7 +12,7 @@ import torch
 import binascii
 import os
 
-from .Agent import Agent
+from agents.Agent import Agent
 from agents.neural_utils.IDeepQLAgent import IDeepQLAgent
 from agents.neural_utils.neuralNet import NeuralNet
 from agents.neural_utils.neuralNet import get_optimizer
