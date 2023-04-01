@@ -79,7 +79,7 @@ class C51(IDeepQLAgent):
                                                 self.neural_size_hidden)
         self.optimizer = torch.optim.Adam(self.policy_net.parameters(), self.learning_rate)
 
-    def computeActionFromQValue(self, state):
+    def compute_action_from_Q_value(self, state):
         with torch.no_grad():
             state = state.unsqueeze(0)
             dist = self.target_net(state)

@@ -14,13 +14,13 @@ class DQL_Dual_ET_Decay(DQL_Dual_Decay):
         "accumulating",
         "dutch"
     ]
+
     def __init__(self, refm, disc_rate, learning_rate, gamma, batch_size, epsilon_decay_length, neural_size_l1,
                  neural_size_l2, neural_size_l3, tau, update_interval_length, lambda_val, traces_method):
         super().__init__(refm, disc_rate, learning_rate, gamma, batch_size, epsilon_decay_length, neural_size_l1, neural_size_l2, neural_size_l3, tau, update_interval_length)
         self.eligibility = torch.zeros((self.batch_size, self.num_actions))
         self.lambda_val = lambda_val
         self.trace_method = self.TRACES_METHODS[int(traces_method)]
-        self.action_q_values = [[] for i in range(self.num_actions)]
         self.criterion = get_criterion(reduction='none')
 
     def reset(self):
@@ -33,14 +33,12 @@ class DQL_Dual_ET_Decay(DQL_Dual_Decay):
         state_batch, action_batch, reward_batch, next_state_batch = self.get_learning_batches()
 
         q_values = self.policy_net(state_batch)
-        self.append_q_values(q_values.detach(), state_batch)
         q_values = q_values.gather(1, action_batch).squeeze()
 
         q_next_values = None
         with torch.no_grad():
             q_next_values = reward_batch + self.gamma * self.target_net(next_state_batch).max(1)[0]
 
-        #td_error = (q_next_values - q_values).pow(2)
         td_error = self.criterion(q_values, q_next_values)
 
         # update eligibility traces
@@ -72,19 +70,6 @@ class DQL_Dual_ET_Decay(DQL_Dual_Decay):
 
     def reset_trace(self):
         return torch.zeros((self.batch_size, self.num_actions))
-
-    def append_q_values(self, q_values_batch, state_batch):
-        for i, q_values in enumerate(q_values_batch):
-            state = state_batch[i]
-            state_index_val = state[math.ceil(self.neural_input_size/2)+2].item()
-            if state_index_val == 0:
-                break
-            for i in range(self.num_actions):
-                self.action_q_values[i].append(q_values[i].item())
-
-    def episode_ended(self):
-        self.plotting_tools.plot_array(y=self.last_losses, title="Loss")
-        self.plotting_tools.plot_multiple_array(self.action_q_values, title="Q-values")
 
     def __str__(self):
         return "DQL_Dual_Decay(%.4f,%.2f,%d,%d,%d,%d,%d,%.2f,%d,%.2f,%s)" % (

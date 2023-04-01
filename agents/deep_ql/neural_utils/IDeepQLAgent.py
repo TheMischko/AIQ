@@ -3,10 +3,8 @@ import random
 import numpy as np
 import torch
 
-import binascii
-import os
-
 from agents.Agent import Agent
+from agents.deep_ql.dql_config import DQLConfig
 from agents.deep_ql.neural_utils.neuralNet import NeuralNet
 from agents.deep_ql.neural_utils.neuralNet import get_optimizer
 from agents.deep_ql.neural_utils.neuralNet import get_criterion
@@ -15,13 +13,15 @@ from agents.deep_ql.neural_utils.plottingTools import PlottingTools
 
 
 class IDeepQLAgent(Agent):
-    START_EPSILON = 1.0
-    MIN_EPSILON = 0.01
-    REWARD_DIVIDER = 100
-    PLOT_Q_VALUES = False
-    PLOT_LOSS = True
-    PLOT_ACTIONS_TAKEN = False
-    PLOT_REWARDS = False
+    START_EPSILON = DQLConfig["start_epsilon"]
+    MIN_EPSILON = DQLConfig["min_epsilon"]
+    REWARD_DIVIDER = DQLConfig["reward_divider"]
+    PLOT_Q_VALUES = DQLConfig["plot_Q_values"]
+    PLOT_LOSS = DQLConfig["plot_rewards"]
+    PLOT_ACTIONS_TAKEN = DQLConfig["plot_actions_taken"]
+    PLOT_REWARDS = DQLConfig["plot_rewards"]
+    PLOT_PROBABILITY = DQLConfig["plot_probability"]
+    STATE_FOR_Q_VALUES_SAVING = DQLConfig["state_for_Q_values_saving"]
 
     def __init__(self, refm, disc_rate, learning_rate, gamma, batch_size, epsilon_decay_length, neural_size_l1,
                  neural_size_l2, neural_size_l3):
@@ -51,44 +51,31 @@ class IDeepQLAgent(Agent):
         self.cached_state_raw = None
         self.prev_state = None
         self.prev_action = None
-        self.TERMINAL_TOKEN = "TERMINAL"
         self.steps_done = 0
 
         # Plotting data
         self.last_losses = list()
-        self.q_values_arr = list()
-        self.id = binascii.b2a_hex(os.urandom(8))
-        self.last_network_output = None
+        self.q_values_arr = [[] for i in range(self.num_actions)]
         self.actions_taken = list()
         self.rewards_given = list()
 
         self.plotting_tools = PlottingTools()
-        self.epsilon_linear_decay = 0 if self.episodes_till_min_decay == 0 else (self.starting_epsilon - self.MIN_EPSILON) / self.episodes_till_min_decay
+        self.epsilon_linear_decay = 0 if self.episodes_till_min_decay == 0 \
+            else (self.starting_epsilon - self.MIN_EPSILON) / self.episodes_till_min_decay
 
     def reset(self):
-        if self.steps_done > 0:
-            losses = np.array(self.last_losses)
-            if self.PLOT_Q_VALUES:
-                self.plotting_tools.plot_array(np.array(self.q_values_arr), "Q values")
-            if self.PLOT_LOSS and len(self.last_losses) > 100:
-                self.plotting_tools.add_values_to_average_arr(losses)
-            if self.PLOT_ACTIONS_TAKEN:
-                self.plotting_tools.plot_array(np.array(self.actions_taken), "Actions taken", type="o")
-            if self.PLOT_REWARDS and len(self.rewards_given) > 0:
-                self.plotting_tools.plot_array(np.array(self.rewards_given), "Rewards", type="o")
-
         self.memory = ReplayMemory(10000)
         # Network evaluating Q function
-        self.target_net = NeuralNet(self.neural_input_size, self.num_actions, self.neural_size_l1, self.neural_size_l2, self.neural_size_l3)
+        self.target_net = NeuralNet(self.neural_input_size, self.num_actions,
+                                    self.neural_size_l1, self.neural_size_l2, self.neural_size_l3)
         # Network that is learning from replay memory
         self.optimizer = get_optimizer(self.target_net, learning_rate=self.learning_rate)
         self.steps_done = 0
         self.epsilon = self.starting_epsilon
-        self.q_values_arr.clear()
-        self.last_losses.clear()
+        self.reset_values_for_plots()
 
     def perceive(self, observations, reward):
-        new_state_tensor = self.transferObservationToStateVec(observations)
+        new_state_tensor = self.transfer_observation_to_state_vec(observations)
         new_state_unsqueezed = new_state_tensor.unsqueeze(0)
         # Add to replay memory
         if (self.prev_state is not None) and (self.prev_action is not None):
@@ -104,7 +91,7 @@ class IDeepQLAgent(Agent):
         self.learn_from_experience()
 
         # Get action
-        opt_action = self.getAction(new_state_tensor)
+        opt_action = self.get_action(new_state_tensor)
 
         # Cache current state and selected action
         self.prev_action = torch.tensor(opt_action).unsqueeze(0).unsqueeze(0)
@@ -113,11 +100,28 @@ class IDeepQLAgent(Agent):
 
         return opt_action
 
-    def episode_ended(self):
-        pass
+    def episode_ended(self, stratum, program):
+        if len(self.q_values_arr[0]) < 15:
+            return
+        if random.random() > self.PLOT_PROBABILITY:
+            return
 
+        if self.PLOT_LOSS and len(self.last_losses) > 0:
+            self.plotting_tools.plot_array(y=self.last_losses, title=self.get_plot_title(stratum, program, "Loss"))
 
-    def getAction(self, state):
+        if self.PLOT_Q_VALUES and len(self.q_values_arr[0]) > 0:
+            self.plotting_tools.plot_multiple_array(self.q_values_arr,
+                                                    title=self.get_plot_title(stratum, program, "Q-values"))
+
+        if self.PLOT_REWARDS and len(self.rewards_given) > 0:
+            self.plotting_tools.plot_array(y=self.rewards_given,
+                                           title=self.get_plot_title(stratum, program, "Rewards"), type="o")
+
+        if self.PLOT_ACTIONS_TAKEN and len(self.actions_taken) > 0:
+            self.plotting_tools.plot_array(y=self.actions_taken,
+                                           title=self.get_plot_title(stratum, program, "Actions taken"), type="o")
+
+    def get_action(self, state):
         """
           Compute the action to take in the current state.  With
           probability self.epsilon, random action will be taken or
@@ -129,20 +133,24 @@ class IDeepQLAgent(Agent):
         if is_random:
             action = random.choice(legal_actions)
         else:
-            action = self.computeActionFromQValue(state)
-        self.actions_taken.append(action)
+            action = self.compute_action_from_Q_value(state)
+
+        if self.PLOT_ACTIONS_TAKEN:
+            self.actions_taken.append(action)
+
         return action
 
-    def computeActionFromQValue(self, state):
+    def compute_action_from_Q_value(self, state):
         with torch.no_grad():
             action_values = self.target_net.forward(state).tolist()
-            best_q_value = np.max(action_values)
-            self.q_values_arr.append(best_q_value)
-            policy = np.argmax(action_values)
 
+            if self.PLOT_Q_VALUES:
+                self.append_q_values(action_values, state)
+
+            policy = np.argmax(action_values)
             return policy
 
-    def transferObservationToStateVec(self, observations):
+    def transfer_observation_to_state_vec(self, observations):
         if len(observations) != self.obs_cells:
             raise Exception("Observation is not in count as observation cells.")
 
@@ -192,5 +200,19 @@ class IDeepQLAgent(Agent):
         """
         raise NotImplementedError()
 
-    def get_parsable_name(self):
-        return "deepql"
+    def reset_values_for_plots(self):
+        self.last_losses = list()
+        self.actions_taken = list()
+        self.rewards_given = list()
+        self.q_values_arr = [[] for i in range(self.num_actions)]
+
+    def append_q_values(self, q_values, state):
+        for i, state_ref_i in enumerate(self.STATE_FOR_Q_VALUES_SAVING):
+            state_i = int(state[i].item())
+            if state_ref_i is not state_i:
+                return
+        for i, q_value in enumerate(q_values):
+            self.q_values_arr[i].append(q_value)
+
+    def get_plot_title(self, stratum, program, title):
+        return "%s for: S%s\n%s" % (title, stratum, program)

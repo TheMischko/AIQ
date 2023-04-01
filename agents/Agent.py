@@ -116,7 +116,7 @@ class Agent:
 
         return i
 
-    def episode_ended(self):
+    def episode_ended(self, stratum, program):
         return
 
     def __str__(self):
