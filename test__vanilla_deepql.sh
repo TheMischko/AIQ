@@ -6,7 +6,7 @@
 
 DATADIR=/auto/vestec1-elixir/home/dvom24
 
-echo "$PBS_JOBID is running on node `hostname -f` in a scratch directory $SCRATCHDIR" >> $DATADIR/DeepQL_test_output.txt
+echo "$PBS_JOBID is running on node `hostname -f` in a scratch directory $SCRATCHDIR" >> $DATADIR/Vannila_DeepQL_test_output.txt
 
 # add modules
 module add python36-modules-gcc
@@ -24,16 +24,16 @@ cd $SCRATCHDIR
 # Clone repository and move into it
 git clone https://github.com/TheMischko/AIQ.git || { echo >&2 "Error while copying git repository!"; exit 2; }
 cd AIQ
-echo "Git repository was successfully cloned." >> $DATADIR/DeepQL_test_output.txt
+echo "Git repository was successfully cloned." >> $DATADIR/Vannila_DeepQL_test_output.txt
 
 # prepare scratch directory
 mkdir -p "log"
 mkdir -p "log-el"
 
 # run script
-echo "Starting python script." >> $DATADIR/DeepQL_test_output.txt
-python AIQ.py --log --verbose_log_el -r BF -l 100000 -s 1000 -t 8 -a DQL_Dual_Decay,0.00468,0.33,32,3000,64,224,176,0.25,60 >> $DATADIR/DeepQL_test_output.txt 2> $DATADIR/DeepQL_test_error.txt
-echo "Script finished." >> $DATADIR/DeepQL_test_output.txt
+echo "Starting python script." >> $DATADIR/Vannila_DeepQL_test_output.txt
+python AIQ.py --log --verbose_log_el -r BF -l 100000 -s 1000 -t 8 -a DQL_Decay,0.00468,0.33,32,3000,64,224,176 >> $DATADIR/Vannila_DeepQL_test_output.txt 2> $DATADIR/Vannila_DeepQL_test_error.txt
+echo "Script finished." >> $DATADIR/Vannila_DeepQL_test_output.txt
 
 # copy output files to DATADIR
 echo "Content of SCRATCH:"
@@ -50,9 +50,9 @@ ls
 cd ..
 echo "------------------------"
 echo "Copying log/"
-cp -r "log" $DATADIR 2> $DATADIR/DeepQL_test_error.txt || { echo >&2 "Log file(s) copying failed (with a code $?) !!"; exit 4; }
+cp -r "log" $DATADIR 2> $DATADIR/Vannila_DeepQL_test_error.txt || { echo >&2 "Log file(s) copying failed (with a code $?) !!"; exit 4; }
 echo "Copying log-el/"
-cp -r "log-el" $DATADIR 2> $DATADIR/DeepQL_test_error.txt || { echo >&2 "Log-el file(s) copying failed (with a code $?) !!"; exit 5; }
+cp -r "log-el" $DATADIR 2> $DATADIR/Vannila_DeepQL_test_error.txt || { echo >&2 "Log-el file(s) copying failed (with a code $?) !!"; exit 5; }
 
 # clean the SCRATCH directory
 clean_scratch

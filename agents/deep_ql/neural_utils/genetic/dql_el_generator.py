@@ -28,7 +28,7 @@ class DQlElGenerator(IGenomeGenerator):
             # Update interval length in length [10, 1000]
             lambda: random.randint(2, 50) * 20,
             # Lambda
-            lambda: random.randint(4, 19) * 0.5,
+            lambda: random.randint(4, 19) * 0.05,
             # Eligiblity method
             lambda: random.choice([0, 1, 2])
 
